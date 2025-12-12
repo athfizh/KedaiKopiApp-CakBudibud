@@ -78,6 +78,7 @@ Tidak bisa oversell! ✅
 - **Auto-Calculate**: Total, pajak (10%), grand total, kembalian
 - **Stock Validation**: Cek ketersediaan stok sebelum checkout
 - **Auto-Reduce Stock**: Stok berkurang otomatis setelah transaksi
+- **Inline Payment**: Pembayaran langsung di panel kasir tanpa dialog terpisah
 
 **🧾 Receipt Printer (Thermal Style):**
 
@@ -105,6 +106,12 @@ Tidak bisa oversell! ✅
 - Search by nama menu
 - Status aktif/non-aktif toggle
 
+**📊 Stock Adjustment Logging:**
+
+- Automatic logging setiap penambahan stok ke `tbl_restock_history`
+- Tracking user, tanggal, dan jumlah restock
+- History dapat dilihat di Monthly Transaction Dialog
+
 **🔄 Auto-Refresh (2 menit):** Stok di-monitor otomatis untuk semua user!
 
 ### 🏷️ Manajemen Kategori (Owner)
@@ -119,6 +126,22 @@ Tidak bisa oversell! ✅
 - Role assignment (Owner/Kasir/Stocker)
 - Reset password dengan BCrypt auto-hashing
 - Toggle active/inactive status
+
+### 📊 Reporting & Export
+
+**Monthly Transaction Dialog:**
+
+- Lihat transaksi penjualan, stok masuk, dan stok keluar per bulan
+- Filter berdasarkan bulan dan tahun
+- Tabel terpisah untuk setiap jenis transaksi
+
+**Excel Export (Multi-Sheet):**
+
+- Export data bulanan ke file Excel dengan satu tombol
+- Sheet 1: Transaksi Penjualan (No, Tanggal, Kasir, Total)
+- Sheet 2: Stok Masuk (No, Tanggal, Menu, Jumlah, User)
+- Sheet 3: Stok Keluar (No, Tanggal, Menu, Jumlah, Kasir)
+- Auto-formatted dengan header styling
 
 ### 🎨 Modern UI/UX
 
@@ -381,9 +404,8 @@ kedai-kopi-app/ (~4 MB)
 │   │   ├── components/
 │   │   │   └── UIComponents.java
 │   │   ├── dialogs/
-│   │   │   ├── PaymentDialog.java
-│   │   │   ├── MonthlyTransactionDialog.java
-│   │   │   └── StockStatusDialog.java
+│   │   │   ├── MonthlyTransactionDialog.java  # 📊 Monthly reports
+│   │   │   └── StockStatusDialog.java         # ⚠️ Stock alerts
 │   │   └── panels/
 │   │       ├── DashboardPanel.java   # ⏱️ Auto-refresh: 5 min
 │   │       ├── KasirPanel.java       # ⏱️ Auto-refresh: 1 min ⚡
@@ -391,10 +413,17 @@ kedai-kopi-app/ (~4 MB)
 │   │       ├── KategoriPanel.java
 │   │       └── UserManagementPanel.java
 │   └── util/
-│       ├── ColorScheme.java
 │       ├── ChartFactory.java
-│       ├── ToastNotification.java
-│       └── ReceiptPrinter.java       # 🧾 Thermal printer style
+│       ├── ColorScheme.java
+│       ├── ExcelExporter.java        # 📊 Multi-sheet Excel export
+│       ├── IconManager.java          # 🎨 SVG icon management
+│       ├── ReceiptPrinter.java       # 🧾 Thermal printer style
+│       └── ToastNotification.java    # 🎉 Toast notifications
+├── src/main/resources/
+│   ├── icons/
+│   │   └── coffee_logo.png
+│   └── logback.xml
+├── logs/                             # Application logs
 ├── pom.xml                           # Maven dependencies
 ├── README.md                         # This file
 └── QUICKSTART.md                     # Quick setup guide
