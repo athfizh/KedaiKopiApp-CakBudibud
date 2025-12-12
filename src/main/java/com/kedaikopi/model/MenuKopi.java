@@ -144,7 +144,7 @@ public class MenuKopi {
      */
     public static List<MenuKopi> getAllActive() {
         List<MenuKopi> menus = new ArrayList<>();
-        String sql = "SELECT m.*, k.nama_kategori " +
+        String sql = "SELECT m.*, k.nama_kategori, k.icon_name " +
                 "FROM tbl_menu m " +
                 "LEFT JOIN tbl_kategori k ON m.id_kategori = k.id_kategori " +
                 "WHERE m.is_active = true " +

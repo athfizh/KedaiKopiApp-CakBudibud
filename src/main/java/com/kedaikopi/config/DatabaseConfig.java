@@ -22,7 +22,7 @@ public class DatabaseConfig {
     // Database configuration
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/db_kedai_kopi";
     private static final String DB_USER = "postgres";
-    private static final String DB_PASSWORD = "kepanjen45";
+    private static final String DB_PASSWORD = "kepanjen45"; //Ganti dengan pass db anda
 
     // Connection pool configuration
     private static final int MAXIMUM_POOL_SIZE = 10;

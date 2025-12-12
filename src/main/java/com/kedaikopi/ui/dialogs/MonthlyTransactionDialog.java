@@ -498,31 +498,39 @@ public class MonthlyTransactionDialog extends JDialog {
     }
 
     private void exportCurrentTab() {
-        int selectedTab = tabbedPane.getSelectedIndex();
-        JTable currentTable;
-        String fileName;
+        // Prepare arrays for all 3 tables
+        JTable[] tables = new JTable[] {
+                salesTable,
+                stockInTable,
+                stockOutTable
+        };
 
-        switch (selectedTab) {
-            case 0: // Sales tab
-                currentTable = salesTable;
-                fileName = "Laporan_Transaksi_Penjualan";
-                break;
-            case 1: // Stock IN tab
-                currentTable = stockInTable;
-                fileName = "Laporan_Stok_Masuk";
-                break;
-            case 2: // Stock OUT tab
-                currentTable = stockOutTable;
-                fileName = "Laporan_Stok_Keluar";
-                break;
-            default:
-                return;
-        }
+        // Prepare sheet names
+        String[] sheetNames = new String[] {
+                "Transaksi Penjualan",
+                "Stok Masuk",
+                "Stok Keluar"
+        };
 
-        boolean success = ExcelExporter.exportToExcel(currentTable, fileName, (JFrame) getOwner());
+        // Generate default filename with month and year
+        String[] monthNames = { "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember" };
+        String monthName = monthNames[selectedMonth - 1];
+        String defaultFileName = String.format("Laporan_Bulanan_%s_%d", monthName, selectedYear);
+
+        // Export all sheets to single Excel file
+        boolean success = ExcelExporter.exportMultipleSheetsToExcel(
+                tables,
+                sheetNames,
+                defaultFileName,
+                (JFrame) getOwner());
+
         if (success) {
             JOptionPane.showMessageDialog(this,
-                    "File Excel berhasil disimpan!",
+                    "File Excel dengan 3 sheet berhasil disimpan!\n" +
+                            "- Transaksi Penjualan\n" +
+                            "- Stok Masuk\n" +
+                            "- Stok Keluar",
                     "Export Berhasil",
                     JOptionPane.INFORMATION_MESSAGE);
         }
