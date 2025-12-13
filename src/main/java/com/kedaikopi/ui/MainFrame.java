@@ -25,7 +25,6 @@ public class MainFrame extends JFrame {
 
     private User currentUser;
     private JPanel contentPanel;
-    private JPanel currentPanel; // Track current active panel
 
     // Sidebar buttons
     private JButton btnDashboard;
@@ -44,6 +43,22 @@ public class MainFrame extends JFrame {
         initComponents();
         setupUI();
         setupListeners();
+
+        // Start session monitoring for auto-logout
+        com.kedaikopi.util.SessionManager.getInstance().startMonitoring(user, this);
+
+        // Add shutdown hook to ensure logout is recorded even on force exit
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // Check if session is still active (monitoring)
+            if (com.kedaikopi.util.SessionManager.getInstance().isMonitoring()) {
+                logger.info("Shutdown hook triggered: Logging out user {}", user.getUsername());
+                try {
+                    com.kedaikopi.model.UserActivityLog.logLogout(user.getIdUser(), "Force Exit / Shutdown");
+                } catch (Exception e) {
+                    logger.error("Failed to log logout in shutdown hook", e);
+                }
+            }
+        }));
 
         logger.info("Main application opened by: {} ({})", user.getUsername(), user.getRole());
     }
@@ -258,59 +273,6 @@ public class MainFrame extends JFrame {
     }
 
     /**
-     * Create user avatar with initials (Option 3)
-     */
-    private JPanel createUserAvatar() {
-        JPanel panel = new JPanel(new MigLayout("fillx, insets 10", "[center]", "[]"));
-        panel.setBackground(ColorScheme.PRIMARY_DARK);
-
-        // Get user initials (e.g., "Bon Kasir" -> "BK")
-        String initials = getInitials(currentUser.getNamaLengkap());
-
-        // Create circular avatar
-        JLabel lblAvatar = new JLabel(initials) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Draw circle background
-                g2d.setColor(new Color(255, 193, 7)); // Yellow/gold
-                g2d.fillOval(0, 0, 50, 50);
-
-                g2d.dispose();
-                super.paintComponent(g);
-            }
-        };
-
-        lblAvatar.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblAvatar.setForeground(new Color(78, 52, 46)); // Dark brown
-        lblAvatar.setHorizontalAlignment(SwingConstants.CENTER);
-        lblAvatar.setVerticalAlignment(SwingConstants.CENTER);
-        lblAvatar.setPreferredSize(new Dimension(50, 50));
-
-        panel.add(lblAvatar);
-        return panel;
-    }
-
-    /**
-     * Get initials from full name
-     */
-    private String getInitials(String fullName) {
-        if (fullName == null || fullName.trim().isEmpty()) {
-            return "?";
-        }
-
-        String[] parts = fullName.trim().split("\\s+");
-        if (parts.length == 1) {
-            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase();
-        }
-
-        // Take first letter of first two words
-        return (parts[0].charAt(0) + "" + parts[1].charAt(0)).toUpperCase();
-    }
-
-    /**
      * Enhanced session timer widget - shows real-time clock
      */
     private JPanel createSessionTimer() {
@@ -359,64 +321,6 @@ public class MainFrame extends JFrame {
     }
 
     /**
-     * Idea 8: Create user avatar with role-specific badge
-     */
-    private JPanel createUserAvatarWithBadge() {
-        JPanel panel = new JPanel(new MigLayout("fillx, insets 10", "[center][center]", "[]"));
-        panel.setBackground(ColorScheme.PRIMARY_DARK);
-
-        // Get user initials
-        String initials = getInitials(currentUser.getNamaLengkap());
-
-        // Create circular avatar
-        JLabel lblAvatar = new JLabel(initials) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Draw circle background
-                g2d.setColor(new Color(255, 193, 7)); // Yellow/gold
-                g2d.fillOval(0, 0, 50, 50);
-
-                g2d.dispose();
-                super.paintComponent(g);
-            }
-        };
-
-        lblAvatar.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblAvatar.setForeground(new Color(78, 52, 46));
-        lblAvatar.setHorizontalAlignment(SwingConstants.CENTER);
-        lblAvatar.setVerticalAlignment(SwingConstants.CENTER);
-        lblAvatar.setPreferredSize(new Dimension(50, 50));
-
-        // Role badge (Idea 8)
-        JLabel roleBadge = new JLabel(getRoleBadge());
-        roleBadge.setFont(new Font("Segoe UI", Font.PLAIN, 20));
-
-        panel.add(lblAvatar);
-        panel.add(roleBadge, "gapleft 5");
-
-        return panel;
-    }
-
-    /**
-     * Get role-specific badge icon
-     */
-    private String getRoleBadge() {
-        switch (currentUser.getRole()) {
-            case "Owner":
-                return "👑"; // Crown
-            case "Kasir":
-                return "💰"; // Money bag
-            case "Stocker":
-                return "📦"; // Box
-            default:
-                return "";
-        }
-    }
-
-    /**
      * Enhanced coffee quote panel - larger text, daily rotation
      */
     private JPanel createCoffeeQuote() {
@@ -443,24 +347,6 @@ public class MainFrame extends JFrame {
         lblQuote.setForeground(new Color(180, 180, 180));
 
         panel.add(lblQuote);
-        return panel;
-    }
-
-    private JPanel createUserInfoPanel() {
-        JPanel panel = new JPanel(new MigLayout("fillx, insets 15", "[center]", "[]5[]"));
-        panel.setBackground(new Color(58, 32, 26));
-
-        JLabel lblName = new JLabel(currentUser.getNamaLengkap());
-        lblName.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblName.setForeground(Color.WHITE);
-
-        JLabel lblRole = new JLabel(currentUser.getRole());
-        lblRole.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        lblRole.setForeground(new Color(200, 200, 200));
-
-        panel.add(lblName, "wrap");
-        panel.add(lblRole, "wrap");
-
         return panel;
     }
 
@@ -540,7 +426,7 @@ public class MainFrame extends JFrame {
         contentPanel.add(scrollPane, BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
-        currentPanel = newPanel;
+
     }
 
     private void showDashboard() {
@@ -578,24 +464,6 @@ public class MainFrame extends JFrame {
         switchPanel(userPanel);
     }
 
-    private void showComingSoon(String moduleName) {
-        JPanel panel = new JPanel(new MigLayout("fill, insets 40", "[center]", "[]20[]"));
-        panel.setBackground(ColorScheme.BG_LIGHT);
-
-        JLabel lblTitle = new JLabel(moduleName);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        lblTitle.setForeground(ColorScheme.PRIMARY_DARK);
-
-        JLabel lblMessage = new JLabel("Modul ini sedang dalam pembangunan");
-        lblMessage.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        lblMessage.setForeground(ColorScheme.TEXT_SECONDARY);
-
-        panel.add(lblTitle, "wrap");
-        panel.add(lblMessage, "wrap");
-
-        switchPanel(panel);
-    }
-
     private void handleLogout() {
         int option = JOptionPane.showConfirmDialog(
                 this,
@@ -606,6 +474,13 @@ public class MainFrame extends JFrame {
 
         if (option == JOptionPane.YES_OPTION) {
             logger.info("User logged out: {}", currentUser.getUsername());
+
+            // Stop session monitoring
+            com.kedaikopi.util.SessionManager.getInstance().stopMonitoring();
+
+            // Log logout activity
+            com.kedaikopi.model.UserActivityLog.logLogout(currentUser.getIdUser(), "Manual logout");
+
             dispose();
 
             // Open login form again
@@ -626,6 +501,13 @@ public class MainFrame extends JFrame {
 
         if (option == JOptionPane.YES_OPTION) {
             logger.info("Application closed by user: {}", currentUser.getUsername());
+
+            // Stop session monitoring
+            com.kedaikopi.util.SessionManager.getInstance().stopMonitoring();
+
+            // Log logout activity before exit
+            com.kedaikopi.model.UserActivityLog.logLogout(currentUser.getIdUser(), "Application exit");
+
             System.exit(0);
         }
     }

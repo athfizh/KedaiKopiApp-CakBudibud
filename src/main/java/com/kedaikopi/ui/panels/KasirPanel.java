@@ -44,7 +44,8 @@ public class KasirPanel extends JPanel {
 
     public KasirPanel(User user) {
         this.currentUser = user;
-        this.currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        this.currencyFormat = NumberFormat
+                .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
         this.cartItems = new ArrayList<>();
         initComponents();
         loadData();
@@ -474,8 +475,9 @@ public class KasirPanel extends JPanel {
         double tax = subtotal * 0.10; // 10% tax
         double grandTotal = subtotal + tax;
 
-        PaymentDialog paymentDialog = new PaymentDialog(SwingUtilities.getWindowAncestor(this), subtotal, tax,
-                grandTotal);
+        // Use new PaymentMethodDialog
+        com.kedaikopi.ui.dialogs.PaymentMethodDialog paymentDialog = new com.kedaikopi.ui.dialogs.PaymentMethodDialog(
+                SwingUtilities.getWindowAncestor(this), grandTotal);
         paymentDialog.setVisible(true);
 
         if (paymentDialog.isConfirmed()) {
@@ -486,9 +488,9 @@ public class KasirPanel extends JPanel {
             transaksi.setTotalHarga(subtotal);
             transaksi.setPajak(tax);
             transaksi.setGrandTotal(grandTotal);
-            transaksi.setTunai(paymentDialog.getTunai());
-            transaksi.setKembalian(paymentDialog.getKembalian());
-            transaksi.setMetodePembayaran("Cash");
+            transaksi.setTunai(paymentDialog.getCashAmount());
+            transaksi.setKembalian(paymentDialog.getChange());
+            transaksi.setMetodePembayaran(paymentDialog.getSelectedMethod()); // Use selected method
             transaksi.setUser(currentUser);
 
             // Add details
@@ -585,7 +587,8 @@ class PaymentDialog extends JDialog {
         setLayout(new MigLayout("fill, insets 25", "[right]15[350!, grow]", "[]10[]10[]15[]15[]20[]"));
         setBackground(Color.WHITE);
 
-        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        NumberFormat currencyFormat = NumberFormat
+                .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
 
         // Subtotal
         JLabel lblSubtotalLabel = new JLabel("Subtotal:");
@@ -651,7 +654,7 @@ class PaymentDialog extends JDialog {
 
         // Buttons
         JPanel buttonPanel = new JPanel(new MigLayout("insets 0", "[grow][grow]"));
-        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setOpaque(false); // Transparent background for clean look
 
         JButton btnConfirm = UIComponents.createButton("KONFIRMASI", UIComponents.ButtonType.SUCCESS);
         btnConfirm.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -680,7 +683,8 @@ class PaymentDialog extends JDialog {
                 tunai = Double.parseDouble(tunaiStr);
                 kembalian = tunai - grandTotal;
 
-                NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                NumberFormat currencyFormat = NumberFormat
+                        .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
                 lblKembalian.setText(currencyFormat.format(kembalian));
 
                 if (kembalian < 0) {
@@ -708,7 +712,10 @@ class PaymentDialog extends JDialog {
             if (kembalian < 0) {
                 UIComponents.showError((JFrame) getOwner(),
                         "Uang tidak cukup!\nKurang: " +
-                                NumberFormat.getCurrencyInstance(new Locale("id", "ID")).format(-kembalian));
+                                NumberFormat
+                                        .getCurrencyInstance(
+                                                new Locale.Builder().setLanguage("id").setRegion("ID").build())
+                                        .format(-kembalian));
                 return;
             }
 

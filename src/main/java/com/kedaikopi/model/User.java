@@ -24,6 +24,9 @@ public class User {
     private boolean isActive;
     private Timestamp lastLogin;
     private Timestamp createdAt;
+    private Integer assignedShiftId; // Foreign key to tbl_shift
+    private Shift assignedShift; // Lazy loaded
+    private double baseSalary;
 
     // Constructors
     public User() {
@@ -100,6 +103,33 @@ public class User {
 
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Integer getAssignedShiftId() {
+        return assignedShiftId;
+    }
+
+    public void setAssignedShiftId(Integer assignedShiftId) {
+        this.assignedShiftId = assignedShiftId;
+        this.assignedShift = null; // Reset lazy loaded object
+    }
+
+    /**
+     * Get assigned shift (lazy loaded)
+     */
+    public Shift getAssignedShift() {
+        if (assignedShift == null && assignedShiftId != null) {
+            assignedShift = Shift.getById(assignedShiftId);
+        }
+        return assignedShift;
+    }
+
+    public double getBaseSalary() {
+        return baseSalary;
+    }
+
+    public void setBaseSalary(double baseSalary) {
+        this.baseSalary = baseSalary;
     }
 
     // Business Methods
@@ -273,8 +303,9 @@ public class User {
      * Insert new user
      */
     private boolean insert() {
-        String sql = "INSERT INTO tbl_user (username, password, role, nama_lengkap, is_active) " +
-                "VALUES (?, ?, ?, ?, ?) RETURNING id_user";
+        String sql = "INSERT INTO tbl_user (username, password, role, nama_lengkap, is_active, assigned_shift_id, base_salary) "
+                +
+                "VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id_user";
 
         try (Connection conn = DatabaseConfig.getInstance().getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -284,6 +315,12 @@ public class User {
             stmt.setString(3, this.role);
             stmt.setString(4, this.namaLengkap);
             stmt.setBoolean(5, this.isActive);
+            if (assignedShiftId != null) {
+                stmt.setInt(6, assignedShiftId);
+            } else {
+                stmt.setNull(6, Types.INTEGER);
+            }
+            stmt.setDouble(7, this.baseSalary);
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -303,7 +340,8 @@ public class User {
      * Update existing user
      */
     private boolean update() {
-        String sql = "UPDATE tbl_user SET username = ?, role = ?, nama_lengkap = ?, is_active = ? " +
+        String sql = "UPDATE tbl_user SET username = ?, role = ?, nama_lengkap = ?, is_active = ?, assigned_shift_id = ?, base_salary = ? "
+                +
                 "WHERE id_user = ?";
 
         try (Connection conn = DatabaseConfig.getInstance().getConnection();
@@ -313,7 +351,13 @@ public class User {
             stmt.setString(2, this.role);
             stmt.setString(3, this.namaLengkap);
             stmt.setBoolean(4, this.isActive);
-            stmt.setInt(5, this.idUser);
+            if (assignedShiftId != null) {
+                stmt.setInt(5, assignedShiftId);
+            } else {
+                stmt.setNull(5, Types.INTEGER);
+            }
+            stmt.setDouble(6, this.baseSalary);
+            stmt.setInt(7, this.idUser);
 
             int affected = stmt.executeUpdate();
 
@@ -392,6 +436,15 @@ public class User {
         user.setActive(rs.getBoolean("is_active"));
         user.setLastLogin(rs.getTimestamp("last_login"));
         user.setCreatedAt(rs.getTimestamp("created_at"));
+
+        // Handle assigned_shift_id (can be null)
+        int shiftId = rs.getInt("assigned_shift_id");
+        if (!rs.wasNull()) {
+            user.setAssignedShiftId(shiftId);
+        }
+
+        user.setBaseSalary(rs.getDouble("base_salary"));
+
         return user;
     }
 

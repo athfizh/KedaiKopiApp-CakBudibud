@@ -168,9 +168,20 @@ public class ReceiptPrinter {
         receipt.append(center("* Harga sudah termasuk pajak 10% *")).append("\n");
         receipt.append(line("=")).append("\n\n");
 
-        // Payment
-        receipt.append(leftRight("TUNAI", formatCurrency(tunai))).append("\n");
-        receipt.append(leftRight("KEMBALIAN", formatCurrency(kembalian))).append("\n\n");
+        // Payment - show method-specific info
+        String paymentMethod = transaction.getMetodePembayaran();
+        if (paymentMethod == null || paymentMethod.isEmpty()) {
+            paymentMethod = "Cash";
+        }
+
+        receipt.append(leftRight(paymentMethod.toUpperCase(), formatCurrency(tunai))).append("\n");
+
+        // Only show change for Cash payment
+        if ("Cash".equalsIgnoreCase(paymentMethod)) {
+            receipt.append(leftRight("KEMBALIAN", formatCurrency(kembalian))).append("\n\n");
+        } else {
+            receipt.append("\n"); // Just spacing for non-cash
+        }
 
         // Footer
         receipt.append(line("=")).append("\n");

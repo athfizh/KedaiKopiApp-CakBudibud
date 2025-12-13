@@ -4,7 +4,6 @@ import com.kedaikopi.model.Kategori;
 import com.kedaikopi.model.User;
 import com.kedaikopi.ui.components.UIComponents;
 import com.kedaikopi.util.ColorScheme;
-import com.kedaikopi.util.IconManager;
 import net.miginfocom.swing.MigLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +19,6 @@ import java.util.List;
 public class KategoriPanel extends JPanel {
 
     private static final Logger logger = LoggerFactory.getLogger(KategoriPanel.class);
-    private User currentUser;
 
     private JTable table;
     private DefaultTableModel tableModel;
@@ -28,7 +26,7 @@ public class KategoriPanel extends JPanel {
     private JTextField txtSearch;
 
     public KategoriPanel(User user) {
-        this.currentUser = user;
+
         initComponents();
         loadData();
     }
@@ -89,7 +87,7 @@ public class KategoriPanel extends JPanel {
         panel.setBorder(BorderFactory.createLineBorder(ColorScheme.CARD_BORDER, 1));
 
         // Table model
-        String[] columns = { "ID", "Nama Kategori", "Icon", "Jumlah Menu", "Tanggal Dibuat" };
+        String[] columns = { "ID", "Nama Kategori", "Jumlah Menu", "Tanggal Dibuat" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -101,8 +99,7 @@ public class KategoriPanel extends JPanel {
         table.getColumnModel().getColumn(0).setPreferredWidth(50);
         table.getColumnModel().getColumn(1).setPreferredWidth(200);
         table.getColumnModel().getColumn(2).setPreferredWidth(100);
-        table.getColumnModel().getColumn(3).setPreferredWidth(100);
-        table.getColumnModel().getColumn(4).setPreferredWidth(150);
+        table.getColumnModel().getColumn(3).setPreferredWidth(150);
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(null);
@@ -127,7 +124,6 @@ public class KategoriPanel extends JPanel {
             tableModel.addRow(new Object[] {
                     kategori.getIdKategori(),
                     kategori.getNamaKategori(),
-                    kategori.getIconName() != null ? kategori.getIconName() : "-",
                     menuCount + " item",
                     kategori.getCreatedAt() != null ? kategori.getCreatedAt().toString().substring(0, 19) : "-"
             });
@@ -249,7 +245,6 @@ public class KategoriPanel extends JPanel {
                 tableModel.addRow(new Object[] {
                         kategori.getIdKategori(),
                         kategori.getNamaKategori(),
-                        kategori.getIconName() != null ? kategori.getIconName() : "-",
                         menuCount + " item",
                         kategori.getCreatedAt() != null ? kategori.getCreatedAt().toString().substring(0, 19) : "-"
                 });
@@ -266,7 +261,6 @@ class KategoriDialog extends JDialog {
     private boolean confirmed = false;
 
     private JTextField txtNama;
-    private JTextField txtIcon;
 
     public KategoriDialog(Window owner, Kategori kategori) {
         super(owner, kategori == null ? "Tambah Kategori" : "Edit Kategori", Dialog.ModalityType.APPLICATION_MODAL);
@@ -278,7 +272,7 @@ class KategoriDialog extends JDialog {
     }
 
     private void initComponents() {
-        setLayout(new MigLayout("fill, insets 20", "[right]10[300!, grow]", "[]10[]20[]"));
+        setLayout(new MigLayout("fill, insets 20", "[right]10[300!, grow]", "[]20[]"));
         setBackground(Color.WHITE);
 
         // Fields
@@ -286,14 +280,11 @@ class KategoriDialog extends JDialog {
         txtNama = UIComponents.createTextField(20);
         add(txtNama, "growx, wrap");
 
-        add(new JLabel("Icon Name:"));
-        txtIcon = UIComponents.createTextField(20);
-        txtIcon.putClientProperty("JTextField.placeholderText", "e.g., coffee, drink");
-        add(txtIcon, "growx, wrap");
+        add(txtNama, "growx, wrap");
 
         // Buttons
         JPanel buttonPanel = new JPanel(new MigLayout("insets 0", "push[]10[]"));
-        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setOpaque(false); // Transparent background for clean look
 
         JButton btnSave = UIComponents.createButton("Simpan", UIComponents.ButtonType.SUCCESS);
         JButton btnCancel = UIComponents.createButton("Batal", UIComponents.ButtonType.SECONDARY);
@@ -313,7 +304,6 @@ class KategoriDialog extends JDialog {
 
     private void loadData() {
         txtNama.setText(kategori.getNamaKategori());
-        txtIcon.setText(kategori.getIconName());
     }
 
     private void saveKategori() {
@@ -325,7 +315,6 @@ class KategoriDialog extends JDialog {
         }
 
         kategori.setNamaKategori(nama);
-        kategori.setIconName(txtIcon.getText().trim());
 
         confirmed = true;
         dispose();

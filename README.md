@@ -1,167 +1,583 @@
-# Aplikasi Kedai Kopi Cak Budibud - POS & Manajemen Inventaris
+# Kedai Kopi Cak Budibud v2.0 🚀 - POS & Inventory Management
 
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![Maven](https://img.shields.io/badge/Maven-3.8%2B-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue)
-![Size](https://img.shields.io/badge/Size-~4MB-green)
+![Version](https://img.shields.io/badge/Version-2.0-green)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-**Aplikasi manajemen kedai kopi modern "Kedai Kopi Cak Budibud"** - Sistem Point of Sale (POS) dan manajemen inventaris lengkap yang dibangun dengan Java Swing. Mendukung multi-user dengan real-time data synchronization untuk operasional kedai kopi yang efisien dan profesional.
+**Modern coffee shop management system** - Complete Point of Sale (POS) and inventory management built with Java Swing. Supporting multi-user with real-time data synchronization for efficient and professional coffee shop operations.
 
 ---
 
-## 📖 Tentang Aplikasi
+## 🎉 What's New in v2.0
 
-### Latar Belakang
+> [!IMPORTANT] > **Major Release Alert!** Version 2.0 brings significant enhancements in financial reporting, data visualization, and user experience improvements.
 
-Kedai Kopi Cak Budibud memerlukan sistem terintegrasi untuk mengelola penjualan, inventaris, dan operasional harian dengan efisien. Aplikasi ini hadir sebagai solusi all-in-one yang membantu pemilik dan staff kedai kopi dalam:
+### 🆕 Key Improvements
 
-- **Melayani Transaksi dengan Cepat** - Sistem kasir yang user-friendly dengan auto-refresh stock
-- **Mengelola Stok Real-Time** - Tracking stok otomatis dengan alert untuk stok menipis
-- **Menganalisis Penjualan** - Dashboard interaktif dengan visualisasi grafik
-- **Mendukung Multi-User** - Beberapa kasir dapat bekerja bersamaan tanpa konflik data
-- **Mengelola Tim dengan Aman** - Sistem role-based access control (RBAC)
+- ✨ **Enhanced Financial Dashboard** - 6-card comprehensive financial metrics
+- 📊 **Advanced Reporting** - Detailed profit calculations with tax, salaries, and expenses
+- 🎯 **Personalized Kasir Dashboard** - Sales filtered by individual cashier
+- 📈 **Category-based Analytics** - Tab filtering for best-selling items by category
+- 🔍 **Complete Menu Visibility** - All items displayed with smooth scrolling
+- 💡 **Tooltip Hover** - Full value display for truncated numbers
+- 📑 **Enhanced Excel Export** - Professional financial summary in exports
+- ✅ **Improved Data Accuracy** - Chart data now includes tax calculations
+
+### v1.0.0 vs v2.0 Comparison
+
+| Feature                | v1.0.0             | v2.0                                  |
+| ---------------------- | ------------------ | ------------------------------------- |
+| **Financial Cards**    | 4 cards (Basic)    | 6 cards (Comprehensive)               |
+| **Profit Calculation** | Revenue - Expenses | Laba Kotor - Restock - Tax - Salaries |
+| **Kasir Dashboard**    | Global sales data  | Personalized (per cashier)            |
+| **Best Selling View**  | Top 10 only        | All items with scroll                 |
+| **Category Filter**    | Dropdown           | Tab-based navigation                  |
+| **Chart Hover Data**   | Subtotal only      | Grand total (incl. tax)               |
+| **Excel Export**       | Tables only        | Tables + Financial Summary            |
+| **Activity Log**       | Oldest first       | Newest first                          |
+| **Salary Integration** | None               | Full salary tracking                  |
+| **Tooltip Support**    | None               | Full value on hover                   |
 
 ---
 
-## ✨ Fitur Unggulan
+## 📖 About Application
 
-### 🔄 **REAL-TIME Multi-User Support** ⚡ NEW!
+### Background
 
-**Sinkronisasi Data Otomatis:**
+Kedai Kopi Cak Budibud requires an integrated system to manage sales, inventory, and daily operations efficiently. This application provides an all-in-one solution helping coffee shop owners and staff with:
 
-- ✅ **Dashboard**: Auto-refresh setiap 5 menit untuk semua role
-- ✅ **Kasir Panel**: Auto-refresh setiap 1 menit untuk update stok terbaru (CRITICAL!)
-- ✅ **Inventaris Panel**: Auto-refresh setiap 2 menit untuk monitoring stok
-- ✅ **Multi-Kasir Safe**: Mencegah overselling dengan data real-time
-- ✅ **Single Database Truth**: Semua user melihat data yang sama
+- **Fast Transaction Processing** - User-friendly cashier system with auto-refresh stock
+- **Real-Time Stock Management** - Automatic stock tracking with low-stock alerts
+- **Sales Analytics** - Interactive dashboard with chart visualizations
+- **Multi-User Support** - Multiple cashiers can work simultaneously without data conflicts
+- **Secure Team Management** - Role-based access control (RBAC)
+
+---
+
+## ✨ Features
+
+### 🔄 REAL-TIME Multi-User Support ⚡
+
+**Automatic Data Synchronization:**
+
+- ✅ **Dashboard**: Auto-refresh every 5 minutes for all roles
+- ✅ **Kasir Panel**: Auto-refresh every 1 minute for latest stock updates (CRITICAL!)
+- ✅ **Inventaris Panel**: Auto-refresh every 2 minutes for stock monitoring
+- ✅ **Multi-Kasir Safe**: Prevents overselling with real-time data
+- ✅ **Single Database Truth**: All users see the same data
 
 **Scenario:**
 
 ```
-Kasir A menjual 10 Latte (10:00 AM)
+Kasir A sells 10 Latte (10:00 AM)
   ↓
-Database: Stock updated dari 50 → 40
+Database: Stock updated 50 → 40
   ↓
 Kasir B auto-refresh (10:01 AM)
   ↓
-Kasir B lihat stock terbaru: 40 ✅
+Kasir B sees latest stock: 40 ✅
   ↓
-Tidak bisa oversell! ✅
+No overselling! ✅
 ```
 
-### 🔐 Sistem Autentikasi & Keamanan
+### 🔐 Authentication & Security
 
-- **Login Aman** dengan BCrypt password hashing (cost factor 12)
+- **Secure Login** with BCrypt password hashing (cost factor 12)
 - **Role-Based Access Control (RBAC)** - Owner, Kasir, Stocker
-- **Activity Logging** untuk audit trail
-- **Session Management** dengan auto-update last login
-- **SQL Injection Protection** dengan PreparedStatement
+- **Activity Logging** for audit trail
+- **Session Management** with auto-update last login
+- **SQL Injection Protection** with PreparedStatement
 
-### 📊 Dashboard Analitik (Owner)
+### 📊 Analytics Dashboard (Owner)
 
-**Visualisasi dengan JFreeChart:**
+**Visualization with JFreeChart:**
 
-- **Statistik Real-time**: Penjualan hari ini, total transaksi, stok menipis
-- **Line Chart**: Tren penjualan 7 hari terakhir
-- **Pie Chart**: Distribusi penjualan per kategori (30 hari)
-- **Bar Chart**: Top 10 menu terlaris dengan ranking
-- **Alert Table**: Daftar menu dengan status stok (HABIS/KRITIS/RENDAH)
-- **Auto-Refresh**: Data dashboard di-refresh otomatis setiap 5 menit
+- **Real-time Statistics**: Today's sales, total transactions, low stock
+- **Line Chart**: 7-day sales trend
+- **Pie Chart**: Sales distribution by category (30 days)
+- **Bar Chart**: Top 10 best-selling menu with ranking
+- **Alert Table**: Menu list with stock status (OUT/CRITICAL/LOW)
+- **Auto-Refresh**: Dashboard data refreshed every 5 minutes
 
 ### 💰 Point of Sale (Kasir)
 
-**Transaksi Cepat & Akurat:**
+**Fast & Accurate Transactions:**
 
-- **Pencarian Pintar**: Real-time search dan filter by kategori
-- **Keranjang Interaktif**: Add, update quantity, remove items
-- **Auto-Calculate**: Total, pajak (10%), grand total, kembalian
-- **Stock Validation**: Cek ketersediaan stok sebelum checkout
-- **Auto-Reduce Stock**: Stok berkurang otomatis setelah transaksi
-- **Inline Payment**: Pembayaran langsung di panel kasir tanpa dialog terpisah
+- **Smart Search**: Real-time search and filter by category
+- **Interactive Cart**: Add, update quantity, remove items
+- **Auto-Calculate**: Total, tax (10%), grand total, change
+- **Stock Validation**: Check stock availability before checkout
+- **Auto-Reduce Stock**: Stock automatically reduced after transaction
+- **Inline Payment**: Direct payment in cashier panel without separate dialog
 
-**🧾 Receipt Printer (Thermal Style):**
+**🧾 Thermal Receipt Printer:**
 
-- **Professional Format**: Seperti struk thermal printer 58mm
-- **Complete Info**: Nama kedai, alamat, no. transaksi, kasir, tanggal/jam
-- **Detail Items**: Qty, nama menu, harga satuan, subtotal
-- **Print Preview**: Lihat struk sebelum print atau simpan
-- **Modal Dialog**: HARUS close struk sebelum transaksi berikutnya
+- **Professional Format**: Like 58mm thermal printer receipt
+- **Complete Info**: Store name, address, transaction no., cashier, date/time
+- **Detail Items**: Qty, menu name, unit price, subtotal
+- **Print Preview**: View receipt before print or save
+- **Modal Dialog**: MUST close receipt before next transaction
 
 **🎉 Toast Notifications:**
 
 - Success (green), Error (red), Warning (orange), Info (blue)
-- Animasi slide-in dan auto-dismiss
-- Feedback instant untuk semua aksi
+- Slide-in animation and auto-dismiss
+- Instant feedback for all actions
 
-**🔄 Auto-Refresh (1 menit):** Menu dan stok di-update otomatis untuk multi-kasir!
+**🔄 Auto-Refresh (1 minute):** Menu and stock auto-updated for multi-kasir!
 
-### 📦 Manajemen Inventaris (Stocker & Owner)
+**🆕 v2.0 Enhancements:**
 
-**CRUD Menu Lengkap:**
+- **Personalized Sales** - View your own sales statistics
+- **Best Selling Tabs** - Filter by category with tabs
+- **Complete Menu List** - All items displayed with scroll
+- **Data Accuracy** - Chart hover shows correct totals including tax
+
+### 📦 Inventory Management (Stocker & Owner)
+
+**Complete CRUD Menu:**
 
 - Create, Read, Update, Delete menu
-- Update stok (tambah/kurangi) dengan tracking
-- Filter by kategori dan status
-- Search by nama menu
-- Status aktif/non-aktif toggle
+- Update stock (add/reduce) with tracking
+- Filter by category and status
+- Search by menu name
+- Active/inactive status toggle
 
 **📊 Stock Adjustment Logging:**
 
-- Automatic logging setiap penambahan stok ke `tbl_restock_history`
-- Tracking user, tanggal, dan jumlah restock
-- History dapat dilihat di Monthly Transaction Dialog
+- Automatic logging every stock addition to `tbl_restock_history`
+- Tracking user, date, and restock amount
+- History viewable in Monthly Transaction Dialog
 
-**🔄 Auto-Refresh (2 menit):** Stok di-monitor otomatis untuk semua user!
+**🔄 Auto-Refresh (2 minutes):** Stock monitored automatically for all users!
 
-### 🏷️ Manajemen Kategori (Owner)
+### 🏷️ Category Management (Owner)
 
-- CRUD kategori produk
-- Dependency checking (cegah delete kategori yang dipakai)
-- Status aktif/non-aktif
+- CRUD product categories
+- Dependency checking (prevent deleting used categories)
+- Active/inactive status
 
-### 👥 Manajemen User (Owner Only)
+### 👥 User Management (Owner Only)
 
-- Tambah, edit, delete user
+- Add, edit, delete users
 - Role assignment (Owner/Kasir/Stocker)
-- Reset password dengan BCrypt auto-hashing
+- Reset password with BCrypt auto-hashing
 - Toggle active/inactive status
+- **🆕 v2.0:** Salary management integration
 
 ### 📊 Reporting & Export
 
 **Monthly Transaction Dialog:**
 
-- Lihat transaksi penjualan, stok masuk, dan stok keluar per bulan
-- Filter berdasarkan bulan dan tahun
-- Tabel terpisah untuk setiap jenis transaksi
+- View sales, stock-in, and stock-out transactions per month
+- Filter by month and year
+- Separate tables for each transaction type
+
+**🆕 v2.0 Financial Summary (6 Cards):**
+
+1. **Total Transaksi** - Transaction count
+2. **Laba Kotor** - Gross profit (total revenue)
+3. **Pengeluaran Restock** - Restock expenses
+4. **Pajak** - Total tax collected
+5. **Gaji Karyawan** - Total employee salaries
+6. **Laba Bersih** - Net profit (Gross - Expenses - Tax - Salaries)
 
 **Excel Export (Multi-Sheet):**
 
-- Export data bulanan ke file Excel dengan satu tombol
-- Sheet 1: Transaksi Penjualan (No, Tanggal, Kasir, Total)
-- Sheet 2: Stok Masuk (No, Tanggal, Menu, Jumlah, User)
-- Sheet 3: Stok Keluar (No, Tanggal, Menu, Jumlah, Kasir)
-- Auto-formatted dengan header styling
+- Export monthly data to Excel with one button
+- Sheet 1: Sales Transactions + **Financial Summary**
+- Sheet 2: Stock In (Restock history)
+- Sheet 3: Stock Out (Sales details)
+- Auto-formatted with professional styling
 
 ### 🎨 Modern UI/UX
 
-- **FlatLaf Light Theme** - Tampilan modern dan clean
-- **Responsive MigLayout** - Adaptif ke berbagai ukuran layar
-- **Color Scheme Consistent** - Primary blue dengan accent colors
-- **Smooth Animations** - Toast notifications dan hover effects
-- **Icon System** - SVG-based dengan IconManager utility
+- **FlatLaf Light Theme** - Modern and clean appearance
+- **Responsive MigLayout** - Adaptive to various screen sizes
+- **Consistent Color Scheme** - Primary blue with accent colors
+- **Smooth Animations** - Toast notifications and hover effects
+- **Icon System** - SVG-based with IconManager utility
+- **🆕 Tooltip Hover** - Full value display for truncated text
 
 ---
 
-## 👥 Role & Akses
+## 👥 Features Per Role
 
-| Role    | Dashboard  | Kasir | Inventaris   | Kategori     | User Mgmt |
-| ------- | ---------- | ----- | ------------ | ------------ | --------- |
-| Owner   | ✅ Full    | ✅    | ✅ Full      | ✅ Full      | ✅ Full   |
-| Kasir   | ✅ Limited | ✅    | ✅ Read-only | ❌           | ❌        |
-| Stocker | ✅ Limited | ❌    | ✅ Full      | ✅ Read-only | ❌        |
+### 🏆 Owner (Full Access)
 
-**Default Login:**
+**Dashboard Analytics:**
+
+- Complete financial overview with 6-card metrics
+- Sales trend charts (7 days)
+- Category distribution pie chart
+- Best-selling items with rankings
+- Stock alert monitoring
+- Monthly transaction reports with Excel export
+
+**Inventory Management:**
+
+- Full CRUD operations for menu items
+- Stock adjustments with history tracking
+- Low stock alerts and monitoring
+- Category management
+- Pricing and availability control
+
+**User Management:**
+
+- Create/edit/delete user accounts
+- Role assignment (Kasir/Stocker)
+- Password reset functionality
+- Activate/deactivate users
+- Salary management
+
+**Transaction Operations:**
+
+- Full cashier capabilities
+- Transaction history access
+- Receipt printing and preview
+
+### 💳 Kasir (Cashier)
+
+**Transaction Processing:**
+
+- Fast POS interface
+- Smart menu search and filtering
+- Interactive shopping cart
+- Real-time stock availability
+- Auto-calculation (tax, total, change)
+- Thermal receipt generation
+- Payment processing
+
+**Personalized Dashboard (🆕 v2.0):**
+
+- **Own sales statistics** - View your sales only
+- Best-selling menu with category tabs
+- Complete menu list with scroll
+- Quick stock status overview
+
+**Inventory (Read-Only):**
+
+- View menu items and prices
+- Check stock availability
+- View categories
+
+**Activity Tracking:**
+
+- Transaction log filtered by cashier
+- Today's sales summary
+
+### 📦 Stocker (Inventory Specialist)
+
+**Inventory Management:**
+
+- Full CRUD operations for menu items
+- Stock adjustments (add/reduce)
+- Restock history tracking
+- Low stock monitoring
+- Auto-refresh stock data
+
+**Dashboard (Limited):**
+
+- Stock status overview
+- Low stock alerts
+- Inventory statistics
+
+**Categories (Read-Only):**
+
+- View all categories
+- Check category assignments
+
+---
+
+## 📐 System Architecture
+
+### User Flow Diagram
+
+```mermaid
+flowchart TD
+    Start([Start Application]) --> Login[Login Screen]
+    Login --> Auth{Authenticate}
+    Auth -->|Invalid| Login
+    Auth -->|Valid| RoleCheck{Check Role}
+
+    RoleCheck -->|Owner| OwnerDash[Owner Dashboard]
+    RoleCheck -->|Kasir| KasirPanel[Kasir Panel]
+    RoleCheck -->|Stocker| StockerDash[Stocker Dashboard]
+
+    OwnerDash --> OwnerMenu{Select Menu}
+    OwnerMenu --> Dashboard[📊 Dashboard]
+    OwnerMenu --> Kasir[💳 Kasir]
+    OwnerMenu --> Inventory[📦 Inventaris]
+    OwnerMenu --> Category[🏷️ Kategori]
+    OwnerMenu --> UserMgmt[👥 User Mgmt]
+
+    KasirPanel --> KasirMenu{Select Menu}
+    KasirMenu --> KDash[📊 Dashboard Limited]
+    KasirMenu --> KPOS[💳 Kasir POS]
+    KasirMenu --> KInv[📦 Inventaris RO]
+
+    StockerDash --> StockerMenu{Select Menu}
+    StockerMenu --> SDash[📊 Dashboard Limited]
+    StockerMenu --> SInv[📦 Inventaris Full]
+    StockerMenu --> SCat[🏷️ Kategori RO]
+
+    Dashboard --> Logout[Logout]
+    Kasir --> Logout
+    Inventory --> Logout
+    Category --> Logout
+    UserMgmt --> Logout
+    KDash --> Logout
+    KPOS --> Logout
+    KInv --> Logout
+    SDash --> Logout
+    SInv --> Logout
+    SCat --> Logout
+
+    Logout --> Start
+```
+
+### System Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph Client["Client Layer"]
+        UI[Java Swing UI]
+        Login[LoginForm]
+        Main[MainFrame]
+        Panels[Panels: Dashboard, Kasir, Inventaris]
+        Dialogs[Dialogs: Transaction, Stock, Reports]
+    end
+
+    subgraph Business["Business Logic Layer"]
+        Models[Models: User, Menu, Transaction]
+        Controllers[Controllers & Services]
+        Security[Security: BCrypt, RBAC]
+        Utils[Utilities: Charts, Export, Notifications]
+    end
+
+    subgraph Data["Data Layer"]
+        HikariCP[HikariCP Connection Pool]
+        DAOs[Data Access Objects]
+        PrepStmt[Prepared Statements]
+    end
+
+    subgraph Database["Database Layer"]
+        PostgreSQL[(PostgreSQL 14+)]
+        Tables[Tables: tbl_user, tbl_menu, tbl_transaksi, etc]
+    end
+
+    UI --> Login
+    UI --> Main
+    Main --> Panels
+    Main --> Dialogs
+
+    Panels --> Models
+    Dialogs --> Models
+    Models --> Controllers
+    Controllers --> Security
+    Controllers --> Utils
+
+    Controllers --> HikariCP
+    HikariCP --> DAOs
+    DAOs --> PrepStmt
+    PrepStmt --> PostgreSQL
+    PostgreSQL --> Tables
+
+    style Client fill:#e3f2fd
+    style Business fill:#fff3e0
+    style Data fill:#f3e5f5
+    style Database fill:#e8f5e9
+```
+
+### Database ER Diagram
+
+```mermaid
+erDiagram
+    tbl_user ||--o{ tbl_transaksi_header : creates
+    tbl_user ||--o{ tbl_user_activity_log : logs
+    tbl_user ||--o{ tbl_restock_history : performs
+
+    tbl_kategori ||--o{ tbl_menu : categorizes
+
+    tbl_menu ||--o{ tbl_transaksi_detail : contains
+    tbl_menu ||--o{ tbl_restock_history : tracks
+
+    tbl_transaksi_header ||--|{ tbl_transaksi_detail : has
+
+    tbl_user {
+        int id_user PK
+        string username UK
+        string password
+        string nama_lengkap
+        string role
+        decimal base_salary
+        boolean is_active
+        timestamp created_at
+    }
+
+    tbl_kategori {
+        int id_kategori PK
+        string nama_kategori UK
+        boolean is_active
+    }
+
+    tbl_menu {
+        int id_menu PK
+        int id_kategori FK
+        string nama_menu
+        decimal harga
+        int stok
+        boolean is_active
+    }
+
+    tbl_transaksi_header {
+        int id_transaksi_header PK
+        int id_user FK
+        string nama_kasir
+        timestamp tanggal
+        decimal total_harga
+        decimal pajak
+        decimal grand_total
+    }
+
+    tbl_transaksi_detail {
+        int id_transaksi_detail PK
+        int id_transaksi_header FK
+        int id_menu FK
+        string nama_menu
+        int qty
+        decimal harga
+        decimal subtotal
+    }
+
+    tbl_restock_history {
+        int id_restock PK
+        int id_menu FK
+        int id_user FK
+        int qty_added
+        int qty_before
+        int qty_after
+        string notes
+        timestamp created_at
+    }
+
+    tbl_user_activity_log {
+        int id_log PK
+        int id_user FK
+        string activity_type
+        timestamp activity_time
+    }
+```
+
+### Transaction Sequential Diagram
+
+```mermaid
+sequenceDiagram
+    actor Kasir
+    participant UI as Kasir Panel
+    participant Cart as Shopping Cart
+    participant DB as Database
+    participant Receipt as Receipt Printer
+
+    Kasir->>UI: Search Menu
+    UI->>DB: Load Menu Items
+    DB-->>UI: Return Menu List
+
+    Kasir->>UI: Add Item to Cart
+    UI->>Cart: Add Item
+    UI->>DB: Check Stock
+    DB-->>UI: Stock Available
+
+    Kasir->>UI: Update Quantity
+    UI->>Cart: Update Item
+
+    Kasir->>UI: Input Payment
+    UI->>UI: Calculate Total + Tax
+    UI->>UI: Calculate Change
+
+    Kasir->>UI: Process Transaction
+
+    UI->>DB: Begin Transaction
+    DB-->>UI: Transaction Started
+
+    UI->>DB: Insert tbl_transaksi_header
+    DB-->>UI: Header Inserted (ID)
+
+    loop For each cart item
+        UI->>DB: Insert tbl_transaksi_detail
+        DB-->>UI: Detail Inserted
+        UI->>DB: Reduce Menu Stock
+        DB-->>UI: Stock Updated
+    end
+
+    UI->>DB: Commit Transaction
+    DB-->>UI: Success
+
+    UI->>Receipt: Generate Receipt
+    Receipt-->>Kasir: Show Print Preview
+
+    Kasir->>Receipt: Print/Save
+    Receipt-->>Kasir: Receipt Ready
+
+    UI->>Cart: Clear Cart
+    UI->>UI: Show Success Toast
+```
+
+### User Role Hierarchy
+
+```mermaid
+graph TD
+    Owner[👑 Owner<br/>Full Access]
+    Kasir[💳 Kasir<br/>Transaction Focus]
+    Stocker[📦 Stocker<br/>Inventory Focus]
+
+    Owner -->|Manages| Kasir
+    Owner -->|Manages| Stocker
+
+    Owner -.->|Access| OwnerDash[Dashboard Full]
+    Owner -.->|Access| OwnerKasir[Kasir Full]
+    Owner -.->|Access| OwnerInv[Inventaris Full]
+    Owner -.->|Access| OwnerKat[Kategori Full]
+    Owner -.->|Access| OwnerUser[User Mgmt Full]
+
+    Kasir -.->|Access| KasirDash[Dashboard Limited]
+    Kasir -.->|Access| KasirPOS[Kasir Full]
+    Kasir -.->|Access| KasirInv[Inventaris RO]
+
+    Stocker -.->|Access| StockerDash[Dashboard Limited]
+    Stocker -.->|Access| StockerInv[Inventaris Full]
+    Stocker -.->|Access| StockerKat[Kategori RO]
+
+    style Owner fill:#ffd700
+    style Kasir fill:#87ceeb
+    style Stocker fill:#90ee90
+```
+
+---
+
+## 👥 Role Access Matrix
+
+| Feature               | Owner             | Kasir                       | Stocker                 |
+| --------------------- | ----------------- | --------------------------- | ----------------------- |
+| **Dashboard**         | ✅ Full Analytics | ⚠️ Limited (Own Sales v2.0) | ⚠️ Limited (Stock Only) |
+| **POS Kasir**         | ✅ Full Access    | ✅ Full Access              | ❌ No Access            |
+| **Inventaris**        | ✅ Full CRUD      | 👁️ Read Only                | ✅ Full CRUD            |
+| **Kategori**          | ✅ Full CRUD      | ❌ No Access                | 👁️ Read Only            |
+| **User Management**   | ✅ Full CRUD      | ❌ No Access                | ❌ No Access            |
+| **Financial Reports** | ✅ All Data       | ⚠️ Own Data (v2.0)          | ❌ No Access            |
+| **Excel Export**      | ✅ Full Export    | ❌ No Access                | ❌ No Access            |
+| **Activity Logs**     | ✅ All Users      | 👁️ Own Log                  | 👁️ Own Log              |
+
+**Legend:**
+
+- ✅ Full Access
+- ⚠️ Limited/Filtered Access
+- 👁️ Read Only
+- ❌ No Access
+
+**Default Credentials:**
 
 - Owner: `admin` / `admin123`
 - Kasir: `kasir1` / `admin123`
@@ -169,7 +585,7 @@ Tidak bisa oversell! ✅
 
 ---
 
-## 🛠️ Teknologi & Library
+## 🛠️ Technology Stack
 
 **Core:**
 
@@ -195,6 +611,10 @@ Tidak bisa oversell! ✅
 **Charting:**
 
 - JFreeChart 1.5.4 - Professional charts
+
+**Excel:**
+
+- Apache POI 5.2+ - Excel generation
 
 **Utilities:**
 
@@ -222,34 +642,34 @@ Tidak bisa oversell! ✅
 | Storage   | **300 MB** free space |
 | Display   | 1920x1080 (Full HD)   |
 
-**Catatan:**
+**Notes:**
 
 - **App Size**: ~4 MB (source code + dependencies)
-- **Installed Size**: ~50-100 MB (termasuk Java runtime jika belum ada)
-- **Database Size**: ~10-50 MB (tergantung jumlah transaksi)
+- **Installed Size**: ~50-100 MB (including Java runtime if not present)
+- **Database Size**: ~10-50 MB (depends on transaction volume)
 
 ### Software Requirements
 
 ✅ **Java Development Kit (JDK) 17+**
 
 - Download: [Adoptium Temurin](https://adoptium.net/)
-- Verifikasi: `java -version`
+- Verify: `java -version`
 
 ✅ **Apache Maven 3.8+**
 
 - Download: [Maven Official](https://maven.apache.org/download.cgi)
-- Verifikasi: `mvn -version`
+- Verify: `mvn -version`
 
 ✅ **PostgreSQL 14+**
 
 - Download: [PostgreSQL Official](https://www.postgresql.org/download/)
-- Verifikasi: `psql --version`
+- Verify: `psql --version`
 
 ---
 
-## 🚀 Instalasi & Setup
+## 🚀 Installation & Setup
 
-### Quick Start (5 Menit!)
+### Quick Start (5 Minutes!)
 
 ```bash
 # 1. Clone repository
@@ -262,6 +682,7 @@ CREATE DATABASE db_kedai_kopi;
 \c db_kedai_kopi
 \i database_schema.sql
 \i database_sample_data.sql
+\i database_salary_update.sql
 \q
 
 # 3. Configure database connection
@@ -277,157 +698,9 @@ mvn exec:java -Dexec.mainClass="com.kedaikopi.Main"
 # Password: admin123
 ```
 
-### Instalasi Detail untuk PC Klien
+### Detailed Installation for Client PC
 
-#### Step 1: Install Java Runtime
-
-```bash
-# Download JDK 17 dari https://adoptium.net/
-# Install dengan wizard installer
-# Verifikasi instalasi:
-java -version
-# Output harus: openjdk version "17.x.x"
-```
-
-#### Step 2: Setup Database (Server/PC Utama)
-
-```bash
-# Install PostgreSQL dari https://www.postgresql.org/download/
-# Jalankan installer, set password untuk user 'postgres'
-
-# Buat database:
-psql -U postgres
-CREATE DATABASE db_kedai_kopi;
-\c db_kedai_kopi
-
-# Import schema dan data:
-\i path/to/database_schema.sql
-\i path/to/database_sample_data.sql
-\q
-```
-
-#### Step 3: Configure Database Connection
-
-Edit file: `src/main/java/com/kedaikopi/config/DatabaseConfig.java`
-
-```java
-private static final String DB_URL = "jdbc:postgresql://localhost:5432/db_kedai_kopi";
-private static final String DB_USER = "postgres";
-private static final String DB_PASSWORD = "GANTI_DENGAN_PASSWORD_ANDA";  // ⚠️ UBAH INI!
-```
-
-**Untuk Multi-PC Setup** (kasir di PC berbeda):
-
-- Ganti `localhost` dengan IP address PC server
-- Contoh: `jdbc:postgresql://192.168.1.100:5432/db_kedai_kopi`
-- Pastikan PostgreSQL allow remote connections (edit `postgresql.conf` & `pg_hba.conf`)
-- Buka firewall port 5432
-
-#### Step 4: Build JAR File
-
-```bash
-# Di folder root project:
-mvn clean package
-
-# Output JAR ada di:
-target/kedai-kopi-app-1.0-SNAPSHOT.jar
-# Size: ~3-4 MB
-```
-
-#### Step 5: Run Aplikasi
-
-**Option A: Run JAR (Recommended untuk Production)**
-
-```bash
-java -jar target/kedai-kopi-app-1.0-SNAPSHOT.jar
-```
-
-**Option B: Run dengan Maven (Development)**
-
-```bash
-mvn exec:java -Dexec.mainClass="com.kedaikopi.Main"
-```
-
-**Option C: Run dari IDE**
-
-1. Import project ke IntelliJ IDEA / Eclipse / NetBeans
-2. Wait for Maven dependencies download
-3. Run `Main.java`
-
----
-
-## 📱 Cara Penggunaan
-
-Lihat [QUICKSTART.md](QUICKSTART.md) untuk panduan lengkap setup multi-user dan deployment.
-
-### Quick Usage Guide
-
-**Owner:**
-
-1. Login → Dashboard (lihat analytics)
-2. Managemen Inventaris, Kategori, User
-3. Monitoring penjualan real-time
-
-**Kasir:**
-
-1. Login → Kasir Panel
-2. Search menu, add to cart
-3. Input payment, print receipt
-4. Auto-refresh stock setiap 1 menit!
-
-**Stocker:**
-
-1. Login → Inventaris
-2. Add menu, update stock
-3. Monitor alert stok menipis
-4. Auto-refresh setiap 2 menit!
-
----
-
-## 🗂️ Struktur Project
-
-```
-kedai-kopi-app/ (~4 MB)
-├── src/main/java/com/kedaikopi/
-│   ├── Main.java                     # Entry point
-│   ├── config/
-│   │   └── DatabaseConfig.java       # HikariCP config
-│   ├── model/
-│   │   ├── User.java                 # User model + BCrypt
-│   │   ├── Kategori.java
-│   │   ├── MenuKopi.java
-│   │   ├── TransaksiHeader.java
-│   │   └── TransaksiDetail.java
-│   ├── ui/
-│   │   ├── LoginForm.java
-│   │   ├── MainFrame.java
-│   │   ├── components/
-│   │   │   └── UIComponents.java
-│   │   ├── dialogs/
-│   │   │   ├── MonthlyTransactionDialog.java  # 📊 Monthly reports
-│   │   │   └── StockStatusDialog.java         # ⚠️ Stock alerts
-│   │   └── panels/
-│   │       ├── DashboardPanel.java   # ⏱️ Auto-refresh: 5 min
-│   │       ├── KasirPanel.java       # ⏱️ Auto-refresh: 1 min ⚡
-│   │       ├── InventarisPanel.java  # ⏱️ Auto-refresh: 2 min
-│   │       ├── KategoriPanel.java
-│   │       └── UserManagementPanel.java
-│   └── util/
-│       ├── ChartFactory.java
-│       ├── ColorScheme.java
-│       ├── ExcelExporter.java        # 📊 Multi-sheet Excel export
-│       ├── IconManager.java          # 🎨 SVG icon management
-│       ├── ReceiptPrinter.java       # 🧾 Thermal printer style
-│       └── ToastNotification.java    # 🎉 Toast notifications
-├── src/main/resources/
-│   ├── icons/
-│   │   └── coffee_logo.png
-│   └── logback.xml
-├── logs/                             # Application logs
-├── pom.xml                           # Maven dependencies
-├── README.md                         # This file
-└── QUICKSTART.md                     # Quick setup guide
-```
+See [QUICKSTART.md](QUICKSTART.md) for complete multi-user setup guide.
 
 ---
 
@@ -438,7 +711,7 @@ kedai-kopi-app/ (~4 MB)
 | Panel      | Interval  | Priority    | Reason                           |
 | ---------- | --------- | ----------- | -------------------------------- |
 | Dashboard  | 5 min     | Medium      | Business analytics & statistics  |
-| **Kasir**  | **1 min** | **HIGH ⚡** | **Stock sync untuk multi-kasir** |
+| **Kasir**  | **1 min** | **HIGH ⚡** | **Stock sync for multi-cashier** |
 | Inventaris | 2 min     | Medium      | Stock monitoring                 |
 
 **Benefits:**
@@ -446,7 +719,15 @@ kedai-kopi-app/ (~4 MB)
 - ✅ Prevents overselling in multi-user scenarios
 - ✅ All roles see consistent, up-to-date data
 - ✅ No manual refresh needed
-- ✅ Optimized intervals - tidak overload database
+- ✅ Optimized intervals - no database overload
+
+---
+
+## 📚 Documentation
+
+- **README.md** (this file) - Complete overview and setup
+- **QUICKSTART.md** - Quick deployment guide
+- **Javadoc** - Generate with: `mvn javadoc:javadoc`
 
 ---
 
@@ -460,9 +741,9 @@ org.postgresql.util.PSQLException: Connection refused
 
 **Solution:**
 
-- Check PostgreSQL is running: `sudo systemctl status postgresql` (Linux) atau cek Services (Windows)
-- Check database credentials di `DatabaseConfig.java`
-- Check firewall allow port 5432
+- Check PostgreSQL is running
+- Verify database credentials in `DatabaseConfig.java`
+- Check firewall allows port 5432
 
 ### ❌ Build Error: "Cannot read or execute"
 
@@ -476,21 +757,13 @@ mvn clean
 mvn clean install -U
 ```
 
-### ❌ Auto-Refresh Tidak Jalan
+### ❌ Auto-Refresh Not Working
 
 **Solution:**
 
-- Check logs di `logs/application.log`
+- Check logs in `logs/application.log`
 - Verify database connection active
-- Restart aplikasi
-
----
-
-## 📚 Documentation
-
-- **README.md** (this file) - Overview dan setup lengkap
-- **QUICKSTART.md** - Quick start guide untuk deployment
-- **Javadoc** - Generate with: `mvn javadoc:javadoc`
+- Restart application
 
 ---
 
@@ -499,7 +772,8 @@ mvn clean install -U
 **Developed by**: **Athaulla Hafizh**  
 **Institution**: Politeknik Negeri Malang (POLINEMA)  
 **Program**: Teknik Informatika  
-**Year**: 2025
+**Year**: 2025  
+**Version**: 2.0
 
 ---
 
@@ -511,17 +785,61 @@ MIT License - Free to use and modify for educational and commercial purposes.
 
 ## 🙏 Acknowledgments
 
-- **JFreeChart** untuk charting library
-- **FlatLaf** untuk modern Look & Feel
-- **PostgreSQL** untuk robust database
-- **HikariCP** untuk high-performance connection pooling
-- **BCrypt** untuk secure password hashing
+- **JFreeChart** for charting library
+- **FlatLaf** for modern Look & Feel
+- **PostgreSQL** for robust database
+- **HikariCP** for high-performance connection pooling
+- **BCrypt** for secure password hashing
+- **Apache POI** for Excel generation
 
 ---
 
-**Selamat Menggunakan Kedai Kopi Cak Budibud! ☕**
+## 📝 Changelog
 
-> 💡 **Pro Tip**: Gunakan multi-user setup untuk pengalaman real-time yang optimal!
+### Version 2.0 (January 2025)
+
+**🆕 New Features:**
+
+- Enhanced financial dashboard with 6-card metrics
+- Personalized cashier dashboard with filtered sales data
+- Category-based tab filtering for best-selling items
+- Complete menu display with scrolling (no 10-item limit)
+- Tooltip hover for full value display
+- Salary management integration
+- Professional Excel export with financial summary
+
+**✨ Improvements:**
+
+- Chart hover data now includes tax (grand_total)
+- Activity log sorted newest-first
+- Improved profit calculations (Gross - Expenses - Tax - Salaries)
+- Better visual hierarchy in financial reports
+- Enhanced data accuracy across all panels
+
+**🐛 Bug Fixes:**
+
+- Fixed sales calculation to include tax properly
+- Corrected database column references for salary data
+- Improved session pairing in activity logs
+
+### Version 1.0.0 (December 2024)
+
+**Initial Release:**
+
+- Basic POS functionality
+- Inventory management
+- User authentication
+- Multi-user support
+- Role-based access control
+- Real-time data sync
+- Receipt printing
+- Excel export
+
+---
+
+**Selamat Menggunakan Kedai Kopi Cak Budibud v2.0! ☕**
+
+> 💡 **Pro Tip**: Use multi-user setup for optimal real-time experience!
 
 ---
 

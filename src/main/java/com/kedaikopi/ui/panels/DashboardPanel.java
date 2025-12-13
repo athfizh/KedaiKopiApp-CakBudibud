@@ -1,5 +1,6 @@
 package com.kedaikopi.ui.panels;
 
+import com.kedaikopi.model.Shift;
 import com.kedaikopi.model.User;
 
 import com.kedaikopi.util.ColorScheme;
@@ -7,6 +8,7 @@ import com.kedaikopi.util.ChartFactory;
 import com.kedaikopi.ui.components.UIComponents;
 import com.kedaikopi.ui.dialogs.StockStatusDialog;
 import com.kedaikopi.ui.dialogs.MonthlyTransactionDialog;
+import com.kedaikopi.ui.dialogs.TransactionLogDialog;
 import net.miginfocom.swing.MigLayout;
 import org.jfree.chart.ChartPanel;
 import org.slf4j.Logger;
@@ -14,11 +16,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
+
 import java.awt.BorderLayout;
 import java.awt.*;
 import java.sql.*;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -53,7 +56,8 @@ public class DashboardPanel extends JPanel {
 
     public DashboardPanel(User user) {
         this.currentUser = user;
-        this.currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        this.currencyFormat = NumberFormat
+                .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
 
         initComponents();
         loadData();
@@ -64,17 +68,38 @@ public class DashboardPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(ColorScheme.BG_LIGHT);
 
-        // Content panel - wider first card (40%), smaller charts for full visibility
+        // Content panel - flexible vertical stacking for Kasir/Stocker
+        // Equal column widths for centered, evenly-spaced cards
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(
-                new MigLayout("fill, insets 20, width 100%", "[40%][30%][30%]", "[]15[120!]15[240!]15[200!]"));
+                new MigLayout("fill, insets 10, width 100%", "[grow][grow][grow]", "[][][][grow]"));
         contentPanel.setBackground(ColorScheme.BG_LIGHT);
 
-        // Title - centered above all content
-        JLabel title = UIComponents.createLabel("Dashboard", UIComponents.LabelType.HEADING);
-        contentPanel.add(title, "span 3, wrap");
+        // Add profile/shift info card FIRST for Kasir and Stocker (swap with title)
+        if (!"Owner".equals(currentUser.getRole())) {
+            JPanel shiftInfoCard = createShiftInfoCard();
+            contentPanel.add(shiftInfoCard, "span 3, growx, h 70!, wrap 15");
+        }
 
-        // Wrap content in scroll pane with smooth scrollingadmijn
+        // Title - AFTER shift card for Kasir/Stocker, or first for Owner
+        JLabel title = UIComponents.createLabel("Dashboard", UIComponents.LabelType.HEADING);
+        if ("Owner".equals(currentUser.getRole())) {
+            contentPanel.add(title, "span 3, wrap");
+        } else {
+            // For Kasir/Stocker: add larger gap (30px) after title before stat cards
+            contentPanel.add(title, "span 3, wrap 30");
+        }
+
+        // Create different dashboards based on role
+        if ("Owner".equals(currentUser.getRole())) {
+            createOwnerDashboard(contentPanel);
+        } else if ("Kasir".equals(currentUser.getRole())) {
+            createKasirDashboard(contentPanel);
+        } else if ("Stocker".equals(currentUser.getRole())) {
+            createStockerDashboard(contentPanel);
+        }
+
+        // Wrap content in scroll pane with smooth scrolling
         JScrollPane scrollPane = new JScrollPane(contentPanel);
         scrollPane.setBorder(null);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -86,19 +111,119 @@ public class DashboardPanel extends JPanel {
 
         add(scrollPane, BorderLayout.CENTER);
 
-        // Role-based content added to contentPanel
-        if ("Owner".equals(currentUser.getRole())) {
-            createOwnerDashboard(contentPanel);
-        } else if ("Kasir".equals(currentUser.getRole())) {
-            createKasirDashboard(contentPanel);
-        } else if ("Stocker".equals(currentUser.getRole())) {
-            createStockerDashboard(contentPanel);
-        }
+        // Initial load
+        loadData();
 
         // Start auto-refresh timer (5 minutes) for Owner dashboard only
         if ("Owner".equals(currentUser.getRole())) {
             startAutoRefresh();
         }
+    }
+
+    /**
+     * Create shift info card for Kasir/Stocker
+     * Shows username, role, assigned shift, and real-time status
+     */
+    private JPanel createShiftInfoCard() {
+        JPanel card = new JPanel(new MigLayout("fill, insets 10 15 10 15", "[]push[]", ""));
+        card.setBackground(new Color(25, 118, 210)); // Blue background
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(21, 101, 192), 1),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+
+        // User info panel (Left)
+        JPanel userInfo = new JPanel(new MigLayout("insets 0", "[]", "[]0[]"));
+        userInfo.setOpaque(false);
+
+        JLabel lblName = new JLabel(currentUser.getNamaLengkap() + " (" + currentUser.getRole() + ")");
+        lblName.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblName.setForeground(Color.WHITE);
+        userInfo.add(lblName, "wrap");
+
+        // Shift info
+        String shiftText = "Shift: ";
+        final Shift[] assignedShift = { null }; // Wrapper for lambda access
+
+        if (currentUser.getAssignedShiftId() != null) {
+            assignedShift[0] = currentUser.getAssignedShift();
+            if (assignedShift[0] != null) {
+                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                shiftText += assignedShift[0].getShiftName() + " (" +
+                        timeFormat.format(assignedShift[0].getStartTime()) + " - " +
+                        timeFormat.format(assignedShift[0].getEndTime()) + ")";
+            } else {
+                shiftText += "Tidak ada shift";
+            }
+        } else {
+            shiftText += "Belum ditentukan";
+        }
+
+        JLabel lblShift = new JLabel(shiftText);
+        lblShift.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblShift.setForeground(new Color(255, 255, 255, 230));
+        userInfo.add(lblShift);
+
+        card.add(userInfo);
+
+        // Status Label (Right)
+        JLabel lblStatus = new JLabel("Checking status...");
+        lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblStatus.setForeground(Color.WHITE);
+        card.add(lblStatus);
+
+        // Timer to update status every second
+        javax.swing.Timer statusTimer = new javax.swing.Timer(1000, e -> {
+            if (assignedShift[0] == null) {
+                lblStatus.setText("Status: -");
+                return;
+            }
+
+            Calendar now = Calendar.getInstance();
+            Calendar shiftStart = Calendar.getInstance();
+            shiftStart.setTime(assignedShift[0].getStartTime());
+
+            // Set shift start date to today for comparison
+            shiftStart.set(Calendar.YEAR, now.get(Calendar.YEAR));
+            shiftStart.set(Calendar.MONTH, now.get(Calendar.MONTH));
+            shiftStart.set(Calendar.DAY_OF_MONTH, now.get(Calendar.DAY_OF_MONTH));
+
+            // Calculate difference in minutes
+            long diffMillis = now.getTimeInMillis() - shiftStart.getTimeInMillis();
+            long diffMinutes = diffMillis / (60 * 1000);
+
+            if (diffMinutes < 0) {
+                // Before shift start
+                lblStatus.setText("Belum Waktunya (Mulai dalam " + Math.abs(diffMinutes) + " mnt)");
+                lblStatus.setForeground(new Color(255, 235, 59)); // Yellow
+            } else if (diffMinutes <= 15) {
+                // Within 15 tolerance
+                lblStatus.setText("Tepat Waktu");
+                lblStatus.setForeground(new Color(76, 255, 76)); // Green
+            } else {
+                // Late
+                lblStatus.setText("Terlambat " + diffMinutes + " menit");
+                lblStatus.setForeground(new Color(255, 82, 82)); // Red
+            }
+
+            // Check shift end warning (e.g. 15 mins before end)
+            Calendar shiftEnd = Calendar.getInstance();
+            shiftEnd.setTime(assignedShift[0].getEndTime());
+            shiftEnd.set(Calendar.YEAR, now.get(Calendar.YEAR));
+            shiftEnd.set(Calendar.MONTH, now.get(Calendar.MONTH));
+            shiftEnd.set(Calendar.DAY_OF_MONTH, now.get(Calendar.DAY_OF_MONTH));
+
+            long minsUntilEnd = (shiftEnd.getTimeInMillis() - now.getTimeInMillis()) / (60 * 1000);
+            if (minsUntilEnd > 0 && minsUntilEnd <= 15) {
+                lblStatus.setText(lblStatus.getText() + " | Sesi berakhir dlm " + minsUntilEnd + " mnt");
+            }
+        });
+        statusTimer.start();
+
+        // Ensure timer stops when panel is removed (add HierarchyListener or similar if
+        // needed,
+        // but for now this is attached to the main dashboard which lives long)
+
+        return card;
     }
 
     /**
@@ -108,11 +233,14 @@ public class DashboardPanel extends JPanel {
         // Statistics Cards Row
         JPanel cardSales = createStatCardPanel("Penjualan Hari Ini", "Rp 0",
                 ColorScheme.ACCENT_GREEN, null);
-        JPanel cardTransactions = createStatCardPanel("Total Transaksi", "0",
+        JPanel cardTransactions = createStatCardPanel("Total Transaksi Hari Ini", "0",
                 ColorScheme.ACCENT_BLUE, null);
 
         lblTodaySales = (JLabel) findValueLabel(cardSales);
         lblTodayTransactions = (JLabel) findValueLabel(cardTransactions);
+
+        // Make cardTransactions clickable
+        makeCardClickable(cardTransactions);
 
         panel.add(cardSales, "h 120!");
         panel.add(cardTransactions, "h 120!");
@@ -162,13 +290,16 @@ public class DashboardPanel extends JPanel {
         lblTodayTransactions = (JLabel) findValueLabel(cardTransactions);
         lblOnlineKasir = (JLabel) findValueLabel(cardOnlineKasir);
 
-        panel.add(cardSales, "grow");
-        panel.add(cardTransactions, "grow");
-        panel.add(cardOnlineKasir, "grow, wrap");
+        // Make Transaksi Anda card clickable to show transaction details
+        makeCardClickable(cardTransactions);
+
+        panel.add(cardSales, "grow, gapright 15");
+        panel.add(cardTransactions, "grow, gapright 15");
+        panel.add(cardOnlineKasir, "grow, wrap 20");
 
         // Best selling items - compact table
         JPanel bestSellingPanel = createCompactBestSellingPanel();
-        panel.add(bestSellingPanel, "span 3, grow, wrap");
+        panel.add(bestSellingPanel, "span 3, growx, h 250::380, wrap 10");
     }
 
     /**
@@ -187,49 +318,19 @@ public class DashboardPanel extends JPanel {
         lblTotalMenuItems = (JLabel) findValueLabel(cardTotalItems);
         lblTotalStock = (JLabel) findValueLabel(cardTotalStock);
 
-        panel.add(cardLowStock, "grow");
-        panel.add(cardTotalItems, "grow");
-        panel.add(cardTotalStock, "grow, wrap");
+        panel.add(cardLowStock, "grow, gapright 15");
+        panel.add(cardTotalItems, "grow, gapright 15");
+        panel.add(cardTotalStock, "grow, wrap 5");
 
         // Low stock alert table - compact
         JPanel lowStockPanel = createCompactLowStockPanel();
-        panel.add(lowStockPanel, "span 3, grow, wrap");
+        panel.add(lowStockPanel, "span 3, growx, h 250::380, wrap 10"); // Max height 380px, gap bottom 10px (match
+                                                                        // insets)
     }
 
     /**
-     * Create best selling items panel
-     */
-    private JPanel createBestSellingPanel() {
-        JPanel panel = new JPanel(new MigLayout("fill, insets 15", "[grow]", "[]10[grow]"));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(ColorScheme.CARD_BORDER, 1));
-
-        // Header - remove emoji
-        JLabel lblTitle = UIComponents.createLabel("Menu Terlaris", UIComponents.LabelType.HEADING);
-        panel.add(lblTitle, "wrap");
-
-        // Table
-        String[] columns = { "Rank", "Nama Menu", "Kategori", "Terjual", "Revenue" };
-        DefaultTableModel model = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        tableBestSelling = UIComponents.createStyledTable(model);
-        tableBestSelling.getColumnModel().getColumn(0).setPreferredWidth(50);
-        tableBestSelling.getColumnModel().getColumn(3).setPreferredWidth(70);
-
-        JScrollPane scrollPane = new JScrollPane(tableBestSelling);
-        scrollPane.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER_COLOR, 1));
-        panel.add(scrollPane, "grow");
-
-        return panel;
-    }
-
-    /**
-     * Create COMPACT best selling panel for single-screen dashboard
+     * Create COMPACT best selling panel with category tabs for single-screen
+     * dashboard
      */
     private JPanel createCompactBestSellingPanel() {
         JPanel panel = new JPanel(new MigLayout("fill, insets 8", "[grow]", "[]6[grow]"));
@@ -242,6 +343,45 @@ public class DashboardPanel extends JPanel {
         lblTitle.setForeground(ColorScheme.ACCENT_BLUE);
         panel.add(lblTitle, "wrap");
 
+        // Create tabbed pane for category filtering
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(UIComponents.FONT_BODY.deriveFont(10f));
+        tabbedPane.setBackground(Color.WHITE);
+
+        // Create "Semua" (All categories) tab
+        JPanel allCategoriesPanel = createBestSellingTablePanel(null);
+        tabbedPane.addTab("Semua Kategori", allCategoriesPanel);
+
+        // Load categories and create tabs
+        try (Connection conn = com.kedaikopi.config.DatabaseConfig.getInstance().getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt
+                        .executeQuery("SELECT id_kategori, nama_kategori FROM tbl_kategori ORDER BY nama_kategori")) {
+
+            while (rs.next()) {
+                int categoryId = rs.getInt("id_kategori");
+                String categoryName = rs.getString("nama_kategori");
+                JPanel categoryPanel = createBestSellingTablePanel(categoryId);
+                tabbedPane.addTab(categoryName, categoryPanel);
+            }
+        } catch (Exception e) {
+            logger.error("Error loading categories for tabs", e);
+        }
+
+        panel.add(tabbedPane, "grow");
+
+        return panel;
+    }
+
+    /**
+     * Create a table panel for best selling items with optional category filter
+     * 
+     * @param categoryId Category ID to filter by, or null for all categories
+     */
+    private JPanel createBestSellingTablePanel(Integer categoryId) {
+        JPanel tablePanel = new JPanel(new MigLayout("fill, insets 0", "[grow]", "[grow]"));
+        tablePanel.setBackground(Color.WHITE);
+
         // Table
         String[] columns = { "#", "Menu", "Kategori", "Terjual" };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
@@ -251,52 +391,26 @@ public class DashboardPanel extends JPanel {
             }
         };
 
-        tableBestSelling = UIComponents.createStyledTable(model);
-        tableBestSelling.setRowHeight(20);
-        tableBestSelling.getColumnModel().getColumn(0).setPreferredWidth(25);
-        tableBestSelling.getColumnModel().getColumn(3).setPreferredWidth(55);
+        JTable table = UIComponents.createStyledTable(model);
+        table.setRowHeight(20);
+        table.getColumnModel().getColumn(0).setPreferredWidth(25);
+        table.getColumnModel().getColumn(3).setPreferredWidth(55);
 
-        JScrollPane scrollPane = new JScrollPane(tableBestSelling);
+        // Store the first table as the main reference
+        if (categoryId == null && tableBestSelling == null) {
+            tableBestSelling = table;
+        }
+
+        JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER_COLOR, 1));
-        scrollPane.setPreferredSize(new Dimension(0, 280)); // Increased from 170 to 280
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS); // Always show scrollbar
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16); // Smooth scrolling
-        panel.add(scrollPane, "grow");
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        tablePanel.add(scrollPane, "grow");
 
-        return panel;
-    }
+        // Load data for this specific category
+        loadBestSellingItemsForCategory(table, categoryId);
 
-    /**
-     * Create low stock alert panel
-     */
-    private JPanel createLowStockPanel() {
-        JPanel panel = new JPanel(new MigLayout("fill, insets 15", "[grow]", "[]10[grow]"));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(ColorScheme.CARD_BORDER, 1));
-
-        // Header - remove emoji
-        JLabel lblTitle = UIComponents.createLabel("Stok Menipis", UIComponents.LabelType.HEADING);
-        lblTitle.setForeground(ColorScheme.ACCENT_ORANGE);
-        panel.add(lblTitle, "wrap");
-
-        // Table
-        String[] columns = { "Nama Menu", "Kategori", "Stok", "Status" };
-        DefaultTableModel model = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        tableLowStock = UIComponents.createStyledTable(model);
-        tableLowStock.getColumnModel().getColumn(2).setPreferredWidth(60);
-        tableLowStock.getColumnModel().getColumn(3).setPreferredWidth(100);
-
-        JScrollPane scrollPane = new JScrollPane(tableLowStock);
-        scrollPane.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER_COLOR, 1));
-        panel.add(scrollPane, "grow");
-
-        return panel;
+        return tablePanel;
     }
 
     /**
@@ -329,31 +443,10 @@ public class DashboardPanel extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(tableLowStock);
         scrollPane.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER_COLOR, 1));
-        scrollPane.setPreferredSize(new Dimension(0, 280)); // Increased from 170 to 280 for more visible rows
+        // Removed setPreferredSize to allow growing to fill dashboard blank space
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS); // Always show scrollbar
         scrollPane.getVerticalScrollBar().setUnitIncrement(16); // Smooth scrolling
         panel.add(scrollPane, "grow");
-
-        return panel;
-    }
-
-    /**
-     * Create chart panel wrapper with consistent styling
-     */
-    private JPanel createChartPanel(String title, ChartPanel chartPanel) {
-        JPanel panel = new JPanel(new MigLayout("fill, insets 15", "[grow]", "[]10[grow]"));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(ColorScheme.CARD_BORDER, 1));
-
-        // Title
-        JLabel lblTitle = UIComponents.createLabel(title, UIComponents.LabelType.HEADING);
-        lblTitle.setForeground(ColorScheme.TEXT_PRIMARY);
-        panel.add(lblTitle, "wrap");
-
-        // Chart
-        chartPanel.setBackground(Color.WHITE);
-        chartPanel.setBorder(null);
-        panel.add(chartPanel, "grow");
 
         return panel;
     }
@@ -386,122 +479,17 @@ public class DashboardPanel extends JPanel {
     }
 
     /**
-     * Create stock status card with JTable (brown header like category table)
-     */
-    private JPanel createStockStatusCard() {
-        JPanel card = new JPanel(new MigLayout("fill, insets 15", "[grow]", "[]10[grow]"));
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(ColorScheme.CARD_BORDER, 1),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-
-        // Title - simple gray text like "Total Transaksi"
-        JLabel lblTitle = new JLabel("Status Stok");
-        lblTitle.setFont(UIComponents.FONT_SMALL);
-        lblTitle.setForeground(ColorScheme.TEXT_SECONDARY);
-        card.add(lblTitle, "wrap");
-
-        // Create table model with 3 columns
-        String[] columns = { "HABIS", "KRITIS", "RENDAH" };
-        DefaultTableModel model = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        // Load and group stock status data
-        try (Connection conn = com.kedaikopi.config.DatabaseConfig.getInstance().getConnection()) {
-            String sql = "SELECT m.nama_menu, m.stok " +
-                    "FROM tbl_menu m " +
-                    "WHERE m.stok < 10 AND m.is_active = TRUE " +
-                    "ORDER BY m.stok ASC, m.nama_menu ASC";
-
-            try (Statement stmt = conn.createStatement();
-                    ResultSet rs = stmt.executeQuery(sql)) {
-
-                // Group items by status
-                java.util.List<String> habis = new java.util.ArrayList<>();
-                java.util.List<String> kritis = new java.util.ArrayList<>();
-                java.util.List<String> rendah = new java.util.ArrayList<>();
-
-                while (rs.next()) {
-                    String namaMenu = rs.getString("nama_menu");
-                    int stok = rs.getInt("stok");
-                    String item = namaMenu + " (" + stok + ")";
-
-                    if (stok == 0) {
-                        habis.add(item);
-                    } else if (stok < 5) {
-                        kritis.add(item);
-                    } else {
-                        rendah.add(item);
-                    }
-                }
-
-                // Add rows to table (each row has items from all 3 columns)
-                int maxRows = Math.max(Math.max(habis.size(), kritis.size()), rendah.size());
-                if (maxRows == 0)
-                    maxRows = 1; // At least one row for "no data"
-
-                for (int i = 0; i < maxRows; i++) {
-                    String colHabis = i < habis.size() ? habis.get(i) : "";
-                    String colKritis = i < kritis.size() ? kritis.get(i) : "";
-                    String colRendah = i < rendah.size() ? rendah.get(i) : "";
-
-                    model.addRow(new Object[] { colHabis, colKritis, colRendah });
-                }
-
-                // If all empty, show message
-                if (habis.isEmpty() && kritis.isEmpty() && rendah.isEmpty()) {
-                    model.setRowCount(0);
-                    model.addRow(new Object[] { "Semua stok aman ✓", "", "" });
-                }
-
-            }
-        } catch (SQLException e) {
-            logger.error("Error loading stock status", e);
-            model.addRow(new Object[] { "Error memuat data", "", "" });
-        }
-
-        // Create and style table
-        JTable table = new JTable(model);
-        table.setFont(UIComponents.FONT_SMALL);
-        table.setRowHeight(22);
-        table.setShowGrid(true);
-        table.setGridColor(ColorScheme.BORDER_COLOR);
-        table.setBackground(Color.WHITE);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        // Style header like category table (brown header, white text)
-        JTableHeader header = table.getTableHeader();
-        header.setBackground(new Color(78, 52, 46)); // Brown like category table
-        header.setForeground(Color.WHITE);
-        header.setFont(UIComponents.FONT_BODY.deriveFont(Font.BOLD));
-        header.setReorderingAllowed(false);
-
-        // Column widths
-        table.getColumnModel().getColumn(0).setPreferredWidth(150);
-        table.getColumnModel().getColumn(1).setPreferredWidth(150);
-        table.getColumnModel().getColumn(2).setPreferredWidth(150);
-
-        // Wrap in scroll pane
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createLineBorder(ColorScheme.BORDER_COLOR, 1));
-        scrollPane.setBackground(Color.WHITE);
-        scrollPane.getViewport().setBackground(Color.WHITE);
-
-        card.add(scrollPane, "grow");
-
-        return card;
-    }
-
-    /**
      * Create action buttons panel (replaces stock status card)
      */
     private JPanel createActionButtonsPanel() {
-        // Vertical stacking for better fit in narrow column
-        JPanel panel = new JPanel(new MigLayout("fill, insets 0", "[grow]", "[grow][10][grow][10][grow]"));
+        // Check if owner for conditional buttons
+        boolean isOwner = "Owner".equals(currentUser.getRole());
+
+        // Vertical stacking - adjust layout based on role
+        String layoutConstraint = isOwner ? "[grow][10][grow][10][grow][10][grow][10][grow]" : // 5 buttons for Owner
+                "[grow][10][grow][10][grow]"; // 3 buttons for others
+
+        JPanel panel = new JPanel(new MigLayout("fill, insets 0", "[grow]", layoutConstraint));
         panel.setOpaque(false);
 
         // Button 1: Stock Status Report
@@ -526,7 +514,31 @@ public class DashboardPanel extends JPanel {
         btnTransactions.addActionListener(e -> openTransactionDialog());
         panel.add(btnTransactions, "grow, h 45!");
 
-        // Button 3: Refresh Dashboard (NEW!)
+        // Button 3: Activity Log (OWNER ONLY)
+        if (isOwner) {
+            JButton btnActivityLog = new JButton("Log/Riwayat Tim");
+            btnActivityLog.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            btnActivityLog.setBackground(new Color(156, 39, 176)); // Purple
+            btnActivityLog.setForeground(Color.WHITE);
+            btnActivityLog.setFocusPainted(false);
+            btnActivityLog.setBorderPainted(false);
+            btnActivityLog.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnActivityLog.addActionListener(e -> openActivityLogDialog());
+            panel.add(btnActivityLog, "grow, h 45!");
+
+            // Button 4: Shift Management (OWNER ONLY)
+            JButton btnShift = new JButton("Manajemen Shift");
+            btnShift.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            btnShift.setBackground(new Color(244, 67, 54)); // Red
+            btnShift.setForeground(Color.WHITE);
+            btnShift.setFocusPainted(false);
+            btnShift.setBorderPainted(false);
+            btnShift.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnShift.addActionListener(e -> openShiftManagementDialog());
+            panel.add(btnShift, "grow, h 45!");
+        }
+
+        // Button 5: Refresh Dashboard
         JButton btnRefresh = new JButton("Refresh");
         btnRefresh.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnRefresh.setBackground(new Color(76, 175, 80)); // Green
@@ -571,6 +583,40 @@ public class DashboardPanel extends JPanel {
     }
 
     /**
+     * Open Activity Log Dialog (Owner only)
+     */
+    private void openActivityLogDialog() {
+        try {
+            com.kedaikopi.ui.dialogs.ActivityLogDialog dialog = new com.kedaikopi.ui.dialogs.ActivityLogDialog(
+                    (JFrame) SwingUtilities.getWindowAncestor(this), currentUser);
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            logger.error("Error opening activity log dialog", e);
+            JOptionPane.showMessageDialog(this,
+                    "Error membuka dialog: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Open Shift Management Dialog (Owner only)
+     */
+    private void openShiftManagementDialog() {
+        try {
+            com.kedaikopi.ui.dialogs.ShiftManagementDialog dialog = new com.kedaikopi.ui.dialogs.ShiftManagementDialog(
+                    (JFrame) SwingUtilities.getWindowAncestor(this), currentUser);
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            logger.error("Error opening shift management dialog", e);
+            JOptionPane.showMessageDialog(this,
+                    "Error membuka dialog: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
      * Open Monthly Transaction Report Dialog
      */
     private void openTransactionDialog() {
@@ -588,62 +634,75 @@ public class DashboardPanel extends JPanel {
     }
 
     /**
-     * Create status column for table layout
+     * Make a card panel clickable with hover effects
      */
-    private JPanel createStatusColumn(String title, java.util.List<String> items, Color color) {
-        JPanel column = new JPanel(new MigLayout("fillx, insets 5", "[grow]", "[]5[]"));
-        column.setBackground(Color.WHITE);
+    private void makeCardClickable(JPanel card) {
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Column header
-        JLabel lblHeader = new JLabel(title);
-        lblHeader.setFont(UIComponents.FONT_BODY.deriveFont(Font.BOLD, 11f));
-        lblHeader.setForeground(color);
-        column.add(lblHeader, "wrap");
+        // Store original border
+        final javax.swing.border.Border originalBorder = card.getBorder();
 
-        // Separator line
-        JSeparator separator = new JSeparator();
-        separator.setForeground(color);
-        separator.setBackground(color);
-        column.add(separator, "growx, wrap, gapbottom 5");
-
-        // Items
-        if (items.isEmpty()) {
-            JLabel lblEmpty = new JLabel("-");
-            lblEmpty.setFont(UIComponents.FONT_SMALL);
-            lblEmpty.setForeground(ColorScheme.TEXT_SECONDARY);
-            column.add(lblEmpty, "wrap");
-        } else {
-            for (String item : items) {
-                JLabel lblItem = new JLabel("• " + item);
-                lblItem.setFont(UIComponents.FONT_SMALL);
-                lblItem.setForeground(ColorScheme.TEXT_PRIMARY);
-                column.add(lblItem, "wrap");
+        // Add mouse listener for hover and click effects
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                // Add highlighted border on hover
+                card.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(ColorScheme.ACCENT_BLUE, 2),
+                        BorderFactory.createEmptyBorder(10, 10, 10, 10)));
             }
-        }
 
-        return column;
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                // Restore original border
+                card.setBorder(originalBorder);
+            }
+
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                openTransactionLogDialog();
+            }
+        });
+
+        // Make all child components also trigger the click
+        for (Component comp : card.getComponents()) {
+            comp.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            comp.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseClicked(java.awt.event.MouseEvent e) {
+                    openTransactionLogDialog();
+                }
+            });
+        }
     }
 
     /**
-     * Add status group to stock card
+     * Open Transaction Log Dialog
      */
-    private void addStatusGroup(JPanel panel, String title, java.util.List<String> items, Color color) {
-        // Status title
-        JLabel lblStatus = new JLabel(title);
-        lblStatus.setFont(UIComponents.FONT_BODY.deriveFont(Font.BOLD, 11f));
-        lblStatus.setForeground(color);
-        panel.add(lblStatus, "wrap, gapbottom 3");
+    private void openTransactionLogDialog() {
+        try {
+            TransactionLogDialog dialog;
 
-        // Items
-        for (String item : items) {
-            JLabel lblItem = new JLabel("  • " + item);
-            lblItem.setFont(UIComponents.FONT_SMALL);
-            lblItem.setForeground(ColorScheme.TEXT_PRIMARY);
-            panel.add(lblItem, "wrap");
+            // For Kasir, show only their transactions from today
+            if ("Kasir".equals(currentUser.getRole())) {
+                dialog = new TransactionLogDialog(
+                        (JFrame) SwingUtilities.getWindowAncestor(this),
+                        currentUser); // Pass current user to filter
+            } else {
+                // For Owner, show all transactions
+                dialog = new TransactionLogDialog(
+                        (JFrame) SwingUtilities.getWindowAncestor(this),
+                        null); // null = no filter
+            }
+
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            logger.error("Error opening transaction log dialog", e);
+            JOptionPane.showMessageDialog(this,
+                    "Error membuka dialog log transaksi: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
-
-        // Add spacing after group
-        panel.add(new JLabel(" "), "wrap, gapbottom 5");
     }
 
     /**
@@ -676,11 +735,18 @@ public class DashboardPanel extends JPanel {
     private void loadStatistics() {
         try (Connection conn = com.kedaikopi.config.DatabaseConfig.getInstance().getConnection()) {
 
-            // Total sales today
+            // Total sales today (including tax)
             if (lblTodaySales != null) {
-                String salesSql = "SELECT COALESCE(SUM(total_harga), 0) as total " +
-                        "FROM tbl_transaksi_header " +
-                        "WHERE DATE(tanggal) = CURRENT_DATE";
+                // Use grand_total which stores final total (subtotal + tax)
+                String salesSql = "SELECT COALESCE(SUM(th.grand_total), 0) as total " +
+                        "FROM tbl_transaksi_header th " +
+                        "WHERE DATE(th.tanggal) = CURRENT_DATE";
+
+                // For Kasir, filter by their user ID to show only their sales
+                if ("Kasir".equals(currentUser.getRole())) {
+                    salesSql += " AND th.id_user = " + currentUser.getIdUser();
+                }
+
                 try (Statement stmt = conn.createStatement();
                         ResultSet rs = stmt.executeQuery(salesSql)) {
                     if (rs.next()) {
@@ -777,7 +843,20 @@ public class DashboardPanel extends JPanel {
         if (tableBestSelling == null)
             return;
 
-        DefaultTableModel model = (DefaultTableModel) tableBestSelling.getModel();
+        loadBestSellingItemsForCategory(tableBestSelling, null);
+    }
+
+    /**
+     * Load best selling items with optional category filter
+     * 
+     * @param table      Table to load data into
+     * @param categoryId Category ID to filter by, or null for all categories
+     */
+    private void loadBestSellingItemsForCategory(JTable table, Integer categoryId) {
+        if (table == null)
+            return;
+
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setRowCount(0);
 
         String sql = "SELECT m.nama_menu, k.nama_kategori, " +
@@ -786,10 +865,15 @@ public class DashboardPanel extends JPanel {
                 "FROM tbl_menu m " +
                 "JOIN tbl_kategori k ON m.id_kategori = k.id_kategori " +
                 "LEFT JOIN tbl_transaksi_detail td ON m.id_menu = td.id_menu " +
-                "WHERE m.is_active = TRUE " +
-                "GROUP BY m.id_menu, m.nama_menu, k.nama_kategori " +
-                "ORDER BY total_terjual DESC " +
-                "LIMIT 10";
+                "WHERE m.is_active = TRUE ";
+
+        // Add category filter if specified
+        if (categoryId != null) {
+            sql += "AND m.id_kategori = " + categoryId + " ";
+        }
+
+        sql += "GROUP BY m.id_menu, m.nama_menu, k.nama_kategori " +
+                "ORDER BY total_terjual DESC"; // Show all menu items sorted by sales
 
         try (Connection conn = com.kedaikopi.config.DatabaseConfig.getInstance().getConnection();
                 Statement stmt = conn.createStatement();

@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * User Management Panel - Manage system users (Owner only)
@@ -22,8 +24,10 @@ public class UserManagementPanel extends JPanel {
 
     private JTable table;
     private DefaultTableModel tableModel;
-    private JButton btnAdd, btnEdit, btnDelete, btnToggleActive, btnResetPassword, btnRefresh;
+    private JButton btnAdd, btnEdit, btnDelete, btnToggleActive, btnResetPassword, btnHistory, btnRefresh;
     private JTextField txtSearch;
+    private NumberFormat currencyFormat = NumberFormat
+            .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
 
     public UserManagementPanel(User user) {
         this.currentUser = user;
@@ -32,6 +36,7 @@ public class UserManagementPanel extends JPanel {
     }
 
     private void initComponents() {
+        // Standard layout to match KategoriPanel (Full width, no clipping)
         setLayout(new MigLayout("fill, insets 20", "[grow]", "[]15[]15[grow]"));
         setBackground(ColorScheme.BG_LIGHT);
 
@@ -49,18 +54,20 @@ public class UserManagementPanel extends JPanel {
     }
 
     private JPanel createToolbar() {
-        JPanel toolbar = new JPanel(new MigLayout("insets 0", "[]10[]10[]10[]push[]10[]", "[]"));
+        // Standard 10px gaps matching KategoriPanel
+        JPanel toolbar = new JPanel(new MigLayout("insets 0", "[]10[]10[]10[]10[]10[]10[]push[]10[]", "[]"));
         toolbar.setBackground(Color.WHITE);
         toolbar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(ColorScheme.BORDER_COLOR, 1),
                 BorderFactory.createEmptyBorder(10, 15, 10, 15)));
 
-        // Buttons
-        btnAdd = UIComponents.createButton("Tambah User", UIComponents.ButtonType.SUCCESS);
+        // Buttons (Shortened text to prevent overflow/clipping)
+        btnAdd = UIComponents.createButton("Tambah", UIComponents.ButtonType.SUCCESS);
         btnEdit = UIComponents.createButton("Edit", UIComponents.ButtonType.PRIMARY);
         btnDelete = UIComponents.createButton("Hapus", UIComponents.ButtonType.DANGER);
-        btnToggleActive = UIComponents.createButton("Toggle Aktif", UIComponents.ButtonType.SECONDARY);
-        btnResetPassword = UIComponents.createButton("Reset Password", UIComponents.ButtonType.SECONDARY);
+        btnToggleActive = UIComponents.createButton("Toggle", UIComponents.ButtonType.SECONDARY);
+        btnResetPassword = UIComponents.createButton("Reset", UIComponents.ButtonType.SECONDARY);
+        btnHistory = UIComponents.createButton("Riwayat", UIComponents.ButtonType.PRIMARY);
 
         // Search
         txtSearch = UIComponents.createTextField(20);
@@ -73,6 +80,7 @@ public class UserManagementPanel extends JPanel {
         toolbar.add(btnDelete);
         toolbar.add(btnToggleActive);
         toolbar.add(btnResetPassword);
+        toolbar.add(btnHistory);
         toolbar.add(txtSearch);
         toolbar.add(btnRefresh);
 
@@ -81,6 +89,7 @@ public class UserManagementPanel extends JPanel {
         btnEdit.addActionListener(e -> showEditDialog());
         btnDelete.addActionListener(e -> deleteUser());
         btnToggleActive.addActionListener(e -> toggleActiveStatus());
+        btnHistory.addActionListener(e -> showHistoryDialog());
         btnResetPassword.addActionListener(e -> resetPassword());
         btnRefresh.addActionListener(e -> loadData());
         txtSearch.addActionListener(e -> searchUser());
@@ -93,8 +102,8 @@ public class UserManagementPanel extends JPanel {
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createLineBorder(ColorScheme.CARD_BORDER, 1));
 
-        // Table model - Now displaying Username column
-        String[] columns = { "ID", "Username", "Role", "Nama Lengkap", "Aktif", "Dibuat" };
+        // Table model - Now including Shift column
+        String[] columns = { "ID", "Username", "Role", "Shift", "Gaji per Bulan", "Nama Lengkap", "Aktif", "Dibuat" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -103,12 +112,15 @@ public class UserManagementPanel extends JPanel {
         };
 
         table = UIComponents.createStyledTable(tableModel);
-        table.getColumnModel().getColumn(0).setPreferredWidth(50); // ID
-        table.getColumnModel().getColumn(1).setPreferredWidth(130); // Username (auto-generated)
-        table.getColumnModel().getColumn(2).setPreferredWidth(90); // Role
-        table.getColumnModel().getColumn(3).setPreferredWidth(200); // Nama Lengkap
-        table.getColumnModel().getColumn(4).setPreferredWidth(70); // Aktif
-        table.getColumnModel().getColumn(5).setPreferredWidth(180); // Dibuat
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS); // Ensure it fills width like Kategori
+        table.getColumnModel().getColumn(0).setPreferredWidth(30); // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(90); // Username
+        table.getColumnModel().getColumn(2).setPreferredWidth(60); // Role
+        table.getColumnModel().getColumn(3).setPreferredWidth(80); // Shift
+        table.getColumnModel().getColumn(4).setPreferredWidth(90); // Gaji
+        table.getColumnModel().getColumn(5).setPreferredWidth(120); // Nama Lengkap
+        table.getColumnModel().getColumn(6).setPreferredWidth(40); // Aktif
+        table.getColumnModel().getColumn(7).setPreferredWidth(110); // Dibuat
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(null);
@@ -127,11 +139,22 @@ public class UserManagementPanel extends JPanel {
         List<User> users = User.getAll();
 
         for (User user : users) {
-            // Column order: ID, Username, Role, Nama Lengkap, Aktif, Dibuat
+            // Get shift name if assigned
+            String shiftName = "-";
+            if (user.getAssignedShiftId() != null) {
+                com.kedaikopi.model.Shift shift = user.getAssignedShift();
+                if (shift != null) {
+                    shiftName = shift.getShiftName();
+                }
+            }
+
+            // Column order: ID, Username, Role, Shift, Nama Lengkap, Aktif, Dibuat
             tableModel.addRow(new Object[] {
                     user.getIdUser(),
-                    user.getUsername(), // Show auto-generated username
+                    user.getUsername(),
                     user.getRole(),
+                    shiftName,
+                    currencyFormat.format(user.getBaseSalary()),
                     user.getNamaLengkap(),
                     user.isActive() ? "Ya" : "Tidak",
                     user.getCreatedAt() != null ? user.getCreatedAt().toString().substring(0, 19) : "-"
@@ -155,11 +178,22 @@ public class UserManagementPanel extends JPanel {
             if (user.getUsername().toLowerCase().contains(keyword) ||
                     user.getNamaLengkap().toLowerCase().contains(keyword) ||
                     user.getRole().toLowerCase().contains(keyword)) {
-                // Column order: ID, Username, Role, Nama Lengkap, Aktif, Dibuat
+                // Get shift name
+                String shiftName = "-";
+                if (user.getAssignedShiftId() != null) {
+                    com.kedaikopi.model.Shift shift = user.getAssignedShift();
+                    if (shift != null) {
+                        shiftName = shift.getShiftName();
+                    }
+                }
+
+                // Column order: ID, Username, Role, Shift, Nama Lengkap, Aktif, Dibuat
                 tableModel.addRow(new Object[] {
                         user.getIdUser(),
-                        user.getUsername(), // Show auto-generated username
+                        user.getUsername(),
                         user.getRole(),
+                        shiftName,
+                        currencyFormat.format(user.getBaseSalary()),
                         user.getNamaLengkap(),
                         user.isActive() ? "Ya" : "Tidak",
                         user.getCreatedAt() != null ? user.getCreatedAt().toString().substring(0, 19) : "-"
@@ -345,6 +379,13 @@ public class UserManagementPanel extends JPanel {
             }
         }
     }
+
+    private void showHistoryDialog() {
+        // TODO: Implement History Dialog
+        com.kedaikopi.ui.dialogs.EmployeeHistoryDialog dialog = new com.kedaikopi.ui.dialogs.EmployeeHistoryDialog(
+                SwingUtilities.getWindowAncestor(this));
+        dialog.setVisible(true);
+    }
 }
 
 /**
@@ -352,7 +393,7 @@ public class UserManagementPanel extends JPanel {
  */
 class UserDialog extends JDialog {
     private User user;
-    private User currentUser;
+
     private boolean confirmed = false;
     private boolean isEditMode;
     private boolean passwordChanged = false; // Track if password was changed
@@ -361,12 +402,15 @@ class UserDialog extends JDialog {
     private JTextField txtNamaLengkap;
     private JPasswordField txtPassword;
     private JComboBox<String> cmbRole;
+    private JTextField txtBaseSalary; // Salary input
+    private JComboBox<com.kedaikopi.model.Shift> cmbShift; // Shift assignment
+    private JLabel lblShift; // Label for shift
     private JCheckBox chkActive;
 
     public UserDialog(Window owner, User user, User currentUser) {
         super(owner, user == null ? "Tambah User" : "Edit User", Dialog.ModalityType.APPLICATION_MODAL);
         this.user = user != null ? user : new User();
-        this.currentUser = currentUser;
+
         this.isEditMode = user != null;
         initComponents();
         if (user != null) {
@@ -433,7 +477,43 @@ class UserDialog extends JDialog {
             cmbRole = new JComboBox<>(new String[] { "Kasir", "Stocker" });
         }
         cmbRole.setFont(UIComponents.FONT_BODY);
+        cmbRole.addActionListener(e -> toggleShiftField()); // Show/hide shift based on role
         add(cmbRole, "growx, wrap");
+
+        // Base Salary
+        add(new JLabel("Gaji Pokok:"));
+        txtBaseSalary = UIComponents.createTextField(30);
+        add(txtBaseSalary, "growx, wrap");
+
+        // Shift Assignment (only for Kasir/Stocker)
+        lblShift = new JLabel("Shift:*");
+        add(lblShift);
+        cmbShift = new JComboBox<>();
+        cmbShift.setFont(UIComponents.FONT_BODY);
+
+        // Load shifts from database
+        List<com.kedaikopi.model.Shift> shifts = com.kedaikopi.model.Shift.getAllShifts();
+        cmbShift.addItem(null); // Allow no shift
+        for (com.kedaikopi.model.Shift shift : shifts) {
+            cmbShift.addItem(shift);
+        }
+        cmbShift.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value == null) {
+                    setText("- Tidak Ada Shift -");
+                } else {
+                    com.kedaikopi.model.Shift shift = (com.kedaikopi.model.Shift) value;
+                    setText(shift.getShiftName() + " (" +
+                            new java.text.SimpleDateFormat("HH:mm").format(shift.getStartTime()) + " - " +
+                            new java.text.SimpleDateFormat("HH:mm").format(shift.getEndTime()) + ")");
+                }
+                return this;
+            }
+        });
+        add(cmbShift, "growx, wrap");
 
         add(new JLabel(""));
         chkActive = new JCheckBox("User Aktif");
@@ -444,7 +524,7 @@ class UserDialog extends JDialog {
 
         // Buttons
         JPanel buttonPanel = new JPanel(new MigLayout("insets 0", "push[]10[]"));
-        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setOpaque(false); // Transparent background for clean look
 
         JButton btnSave = UIComponents.createButton("Simpan", UIComponents.ButtonType.SUCCESS);
         JButton btnCancel = UIComponents.createButton("Batal", UIComponents.ButtonType.SECONDARY);
@@ -467,12 +547,35 @@ class UserDialog extends JDialog {
         txtUsername.setText(user.getUsername());
         txtNamaLengkap.setText(user.getNamaLengkap());
         cmbRole.setSelectedItem(user.getRole());
+        txtBaseSalary.setText(String.format("%.0f", user.getBaseSalary()));
         chkActive.setSelected(user.isActive());
+
+        // Load assigned shift if exists
+        if (user.getAssignedShiftId() != null) {
+            com.kedaikopi.model.Shift assignedShift = user.getAssignedShift();
+            if (assignedShift != null) {
+                cmbShift.setSelectedItem(assignedShift);
+            }
+        }
+
+        // Show/hide shift field based on role
+        toggleShiftField();
+    }
+
+    /**
+     * Show/hide shift field based on selected role
+     */
+    private void toggleShiftField() {
+        String selectedRole = (String) cmbRole.getSelectedItem();
+        boolean showShift = "Kasir".equals(selectedRole) || "Stocker".equals(selectedRole);
+        lblShift.setVisible(showShift);
+        cmbShift.setVisible(showShift);
     }
 
     private void saveUser() {
         String username = txtUsername.getText().trim();
         String namaLengkap = txtNamaLengkap.getText().trim();
+        String salaryStr = txtBaseSalary.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
 
         // Validation
@@ -491,6 +594,18 @@ class UserDialog extends JDialog {
         if (!isEditMode && password.isEmpty()) {
             UIComponents.showError((JFrame) getOwner(), "Password wajib diisi untuk user baru!");
             txtPassword.requestFocus();
+            return;
+        }
+
+        // Validate salary
+        double salary = 0;
+        try {
+            if (!salaryStr.isEmpty()) {
+                salary = Double.parseDouble(salaryStr);
+            }
+        } catch (NumberFormatException e) {
+            UIComponents.showError((JFrame) getOwner(), "Format gaji tidak valid! Masukkan angka saja.");
+            txtBaseSalary.requestFocus();
             return;
         }
 
@@ -524,6 +639,7 @@ class UserDialog extends JDialog {
         // Set user data
         user.setUsername(username);
         user.setNamaLengkap(namaLengkap);
+        user.setBaseSalary(salary);
 
         // Track if password was changed in edit mode
         if (!password.isEmpty()) {
@@ -535,6 +651,19 @@ class UserDialog extends JDialog {
 
         user.setRole((String) cmbRole.getSelectedItem());
         user.setActive(chkActive.isSelected());
+
+        // Set assigned shift (only for Kasir/Stocker)
+        String role = (String) cmbRole.getSelectedItem();
+        if ("Kasir".equals(role) || "Stocker".equals(role)) {
+            com.kedaikopi.model.Shift selectedShift = (com.kedaikopi.model.Shift) cmbShift.getSelectedItem();
+            if (selectedShift != null) {
+                user.setAssignedShiftId(selectedShift.getIdShift());
+            } else {
+                user.setAssignedShiftId(null);
+            }
+        } else {
+            user.setAssignedShiftId(null); // Owner doesn't have shift
+        }
 
         confirmed = true;
         dispose();

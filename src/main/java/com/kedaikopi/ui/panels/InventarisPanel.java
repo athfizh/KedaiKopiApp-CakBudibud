@@ -31,12 +31,10 @@ public class InventarisPanel extends JPanel {
     private JTextField txtSearch;
     private JComboBox<String> cmbFilter;
 
-    // Auto-refresh timer for real-time data
-    private javax.swing.Timer autoRefreshTimer;
-
     public InventarisPanel(User user) {
         this.currentUser = user;
-        this.currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+        this.currencyFormat = NumberFormat
+                .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
         initComponents();
         loadData();
         InventarisAutoRefresh.startAutoRefresh(this); // Auto-refresh every 2 minutes
@@ -387,7 +385,7 @@ class MenuDialog extends JDialog {
 
         // Buttons
         JPanel buttonPanel = new JPanel(new MigLayout("insets 0", "push[]10[]"));
-        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setOpaque(false); // Transparent background for clean look
 
         JButton btnSave = UIComponents.createButton("Simpan", UIComponents.ButtonType.SUCCESS);
         JButton btnCancel = UIComponents.createButton("Batal", UIComponents.ButtonType.SECONDARY);
@@ -511,12 +509,12 @@ class StockAdjustmentDialog extends JDialog {
         // Operation type
         add(new JLabel("Operasi:"));
         JPanel opPanel = new JPanel(new MigLayout("insets 0", "[]20[]"));
-        opPanel.setBackground(Color.WHITE);
+        opPanel.setOpaque(false); // Transparent background
         rbAdd = new JRadioButton("Tambah Stok");
         rbSubtract = new JRadioButton("Kurangi Stok");
         rbAdd.setSelected(true);
-        rbAdd.setBackground(Color.WHITE);
-        rbSubtract.setBackground(Color.WHITE);
+        rbAdd.setOpaque(false); // Transparent background
+        rbSubtract.setOpaque(false); // Transparent background
         rbAdd.setFont(UIComponents.FONT_BODY);
         rbSubtract.setFont(UIComponents.FONT_BODY);
         ButtonGroup bg = new ButtonGroup();
@@ -533,7 +531,7 @@ class StockAdjustmentDialog extends JDialog {
 
         // Buttons
         JPanel buttonPanel = new JPanel(new MigLayout("insets 0", "push[]10[]"));
-        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setOpaque(false); // Transparent background instead of white
 
         JButton btnSave = UIComponents.createButton("Simpan", UIComponents.ButtonType.SUCCESS);
         JButton btnCancel = UIComponents.createButton("Batal", UIComponents.ButtonType.SECONDARY);
@@ -695,13 +693,5 @@ class InventarisAutoRefresh {
         });
         timer.start();
 
-        // Store timer reference in panel for cleanup
-        try {
-            java.lang.reflect.Field field = InventarisPanel.class.getDeclaredField("autoRefreshTimer");
-            field.setAccessible(true);
-            field.set(panel, timer);
-        } catch (Exception ex) {
-            // Ignore reflection error
-        }
     }
 }

@@ -25,7 +25,8 @@ public class MonthlyTransactionDialog extends JDialog {
     private JTabbedPane tabbedPane;
     private JTable salesTable, stockInTable, stockOutTable;
     private DefaultTableModel salesModel, stockInModel, stockOutModel;
-    private JLabel lblTotalTransactions, lblTotalRevenue, lblTotalExpenses, lblTotalProfit;
+    private JLabel lblTotalTransactions, lblLabaKotor, lblPengeluaranRestock, lblTotalPajak, lblTotalGaji,
+            lblLabaBersih;
     private JComboBox<String> cmbMonth, cmbYear;
     private int selectedMonth, selectedYear;
 
@@ -142,19 +143,24 @@ public class MonthlyTransactionDialog extends JDialog {
     }
 
     private JPanel createSummaryPanel() {
-        JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
+        // 6 cards in one row - compressed layout
+        JPanel panel = new JPanel(new GridLayout(1, 6, 8, 0));
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
         lblTotalTransactions = new JLabel("0", SwingConstants.CENTER);
-        lblTotalRevenue = new JLabel("Rp 0", SwingConstants.CENTER);
-        lblTotalExpenses = new JLabel("Rp 0", SwingConstants.CENTER);
-        lblTotalProfit = new JLabel("Rp 0", SwingConstants.CENTER);
+        lblLabaKotor = new JLabel("Rp 0", SwingConstants.CENTER);
+        lblPengeluaranRestock = new JLabel("Rp 0", SwingConstants.CENTER);
+        lblTotalPajak = new JLabel("Rp 0", SwingConstants.CENTER);
+        lblTotalGaji = new JLabel("Rp 0", SwingConstants.CENTER);
+        lblLabaBersih = new JLabel("Rp 0", SwingConstants.CENTER);
 
         panel.add(createSummaryCard("Total Transaksi", lblTotalTransactions, new Color(33, 150, 243))); // Blue
-        panel.add(createSummaryCard("Total Pendapatan", lblTotalRevenue, new Color(76, 175, 80))); // Green
-        panel.add(createSummaryCard("Total Pengeluaran", lblTotalExpenses, new Color(244, 67, 54))); // Red
-        panel.add(createSummaryCard("Total Laba", lblTotalProfit, new Color(156, 39, 176))); // Purple
+        panel.add(createSummaryCard("Laba Kotor", lblLabaKotor, new Color(76, 175, 80))); // Green
+        panel.add(createSummaryCard("Pengeluaran Restock", lblPengeluaranRestock, new Color(244, 67, 54))); // Red
+        panel.add(createSummaryCard("Pajak", lblTotalPajak, new Color(255, 152, 0))); // Orange
+        panel.add(createSummaryCard("Gaji Karyawan", lblTotalGaji, new Color(103, 58, 183))); // Purple
+        panel.add(createSummaryCard("Laba Bersih", lblLabaBersih, new Color(0, 150, 136))); // Teal
 
         return panel;
     }
@@ -165,13 +171,21 @@ public class MonthlyTransactionDialog extends JDialog {
         card.setBorder(BorderFactory.createLineBorder(color.darker(), 2));
 
         JLabel lblTitle = new JLabel(title, SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
         lblTitle.setForeground(Color.WHITE);
         lblTitle.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 5));
 
-        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         valueLabel.setForeground(Color.WHITE);
         valueLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 10, 5));
+
+        // Add tooltip to show full value when text is truncated
+        valueLabel.addPropertyChangeListener("text", evt -> {
+            String text = valueLabel.getText();
+            if (text != null && !text.isEmpty()) {
+                valueLabel.setToolTipText(text); // Show full value on hover
+            }
+        });
 
         card.add(lblTitle, BorderLayout.NORTH);
         card.add(valueLabel, BorderLayout.CENTER);
@@ -327,7 +341,8 @@ public class MonthlyTransactionDialog extends JDialog {
                     "ORDER BY th.tanggal DESC";
 
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-            NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+            NumberFormat currencyFormat = NumberFormat
+                    .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, selectedMonth);
@@ -434,11 +449,16 @@ public class MonthlyTransactionDialog extends JDialog {
     }
 
     private void loadSummary() {
-        double revenue = 0;
-        double expenses = 0;
+        double labaKotor = 0; // Total Pendapatan (grand_total)
+        double pengeluaran = 0; // Pengeluaran restock
+        double totalPajak = 0; // Total pajak
+        double totalGaji = 0; // Total gaji karyawan aktif
 
         try (Connection conn = DatabaseConfig.getInstance().getConnection()) {
-            // Total transactions
+            NumberFormat currencyFormat = NumberFormat
+                    .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
+
+            // 1. Total transactions
             String countSql = "SELECT COUNT(*) AS total FROM tbl_transaksi_header " +
                     "WHERE EXTRACT(MONTH FROM tanggal) = ? AND EXTRACT(YEAR FROM tanggal) = ?";
             try (PreparedStatement stmt = conn.prepareStatement(countSql)) {
@@ -452,45 +472,68 @@ public class MonthlyTransactionDialog extends JDialog {
                 }
             }
 
-            // Total revenue
-            String revenueSql = "SELECT COALESCE(SUM(grand_total), 0) AS revenue FROM tbl_transaksi_header " +
+            // 2. Laba Kotor = Total Pendapatan (SUM of grand_total)
+            String labaSql = "SELECT COALESCE(SUM(grand_total), 0) AS laba_kotor FROM tbl_transaksi_header " +
                     "WHERE EXTRACT(MONTH FROM tanggal) = ? AND EXTRACT(YEAR FROM tanggal) = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(revenueSql)) {
+            try (PreparedStatement stmt = conn.prepareStatement(labaSql)) {
                 stmt.setInt(1, selectedMonth);
                 stmt.setInt(2, selectedYear);
 
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
-                        revenue = rs.getDouble("revenue");
-                        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
-                        lblTotalRevenue.setText(currencyFormat.format(revenue));
+                        labaKotor = rs.getDouble("laba_kotor");
+                        lblLabaKotor.setText(currencyFormat.format(labaKotor));
                     }
                 }
             }
 
-            // Total expenses (Cost of Goods Sold - approximate as 60% of price)
-            String expenseSql = "SELECT COALESCE(SUM(td.qty * m.harga * 0.6), 0) AS expenses " +
-                    "FROM tbl_transaksi_header th " +
-                    "JOIN tbl_transaksi_detail td ON th.id_transaksi_header = td.id_transaksi_header " +
-                    "JOIN tbl_menu m ON td.id_menu = m.id_menu " +
-                    "WHERE EXTRACT(MONTH FROM th.tanggal) = ? AND EXTRACT(YEAR FROM th.tanggal) = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(expenseSql)) {
+            // 3. Pengeluaran Restock = Total harga menu yang direstock
+            String restockSql = "SELECT COALESCE(SUM(rh.qty_added * m.harga), 0) AS pengeluaran " +
+                    "FROM tbl_restock_history rh " +
+                    "JOIN tbl_menu m ON rh.id_menu = m.id_menu " +
+                    "WHERE EXTRACT(MONTH FROM rh.created_at) = ? AND EXTRACT(YEAR FROM rh.created_at) = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(restockSql)) {
                 stmt.setInt(1, selectedMonth);
                 stmt.setInt(2, selectedYear);
 
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
-                        expenses = rs.getDouble("expenses");
-                        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
-                        lblTotalExpenses.setText(currencyFormat.format(expenses));
+                        pengeluaran = rs.getDouble("pengeluaran");
+                        lblPengeluaranRestock.setText(currencyFormat.format(pengeluaran));
                     }
                 }
             }
 
-            // Calculate profit (Revenue - Expenses)
-            double profit = revenue - expenses;
-            NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
-            lblTotalProfit.setText(currencyFormat.format(profit));
+            // 4. Total Pajak = SUM(pajak) from transactions
+            String pajakSql = "SELECT COALESCE(SUM(pajak), 0) AS total_pajak FROM tbl_transaksi_header " +
+                    "WHERE EXTRACT(MONTH FROM tanggal) = ? AND EXTRACT(YEAR FROM tanggal) = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(pajakSql)) {
+                stmt.setInt(1, selectedMonth);
+                stmt.setInt(2, selectedYear);
+
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        totalPajak = rs.getDouble("total_pajak");
+                        lblTotalPajak.setText(currencyFormat.format(totalPajak));
+                    }
+                }
+            }
+
+            // 5. Total Gaji Karyawan = SUM of monthly salaries (active employees only)
+            String gajiSql = "SELECT COALESCE(SUM(base_salary), 0) AS total_gaji FROM tbl_user " +
+                    "WHERE is_active = TRUE";
+            try (PreparedStatement stmt = conn.prepareStatement(gajiSql)) {
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        totalGaji = rs.getDouble("total_gaji");
+                        lblTotalGaji.setText(currencyFormat.format(totalGaji));
+                    }
+                }
+            }
+
+            // 6. Laba Bersih = Laba Kotor - Pengeluaran - Pajak - Gaji
+            double labaBersih = labaKotor - pengeluaran - totalPajak - totalGaji;
+            lblLabaBersih.setText(currencyFormat.format(labaBersih));
 
         } catch (SQLException e) {
             logger.error("Error loading summary", e);
@@ -512,16 +555,37 @@ public class MonthlyTransactionDialog extends JDialog {
                 "Stok Keluar"
         };
 
+        // Prepare summary values to include in Excel
+        String[] summaryLabels = new String[] {
+                "Total Transaksi",
+                "Laba Kotor",
+                "Pengeluaran Restock",
+                "Pajak",
+                "Gaji Karyawan",
+                "Laba Bersih"
+        };
+
+        String[] summaryValues = new String[] {
+                lblTotalTransactions.getText(),
+                lblLabaKotor.getText(),
+                lblPengeluaranRestock.getText(),
+                lblTotalPajak.getText(),
+                lblTotalGaji.getText(),
+                lblLabaBersih.getText()
+        };
+
         // Generate default filename with month and year
         String[] monthNames = { "Januari", "Februari", "Maret", "April", "Mei", "Juni",
                 "Juli", "Agustus", "September", "Oktober", "November", "Desember" };
         String monthName = monthNames[selectedMonth - 1];
         String defaultFileName = String.format("Laporan_Bulanan_%s_%d", monthName, selectedYear);
 
-        // Export all sheets to single Excel file
+        // Export all sheets to single Excel file with summary
         boolean success = ExcelExporter.exportMultipleSheetsToExcel(
                 tables,
                 sheetNames,
+                summaryLabels,
+                summaryValues,
                 defaultFileName,
                 (JFrame) getOwner());
 
@@ -530,7 +594,8 @@ public class MonthlyTransactionDialog extends JDialog {
                     "File Excel dengan 3 sheet berhasil disimpan!\n" +
                             "- Transaksi Penjualan\n" +
                             "- Stok Masuk\n" +
-                            "- Stok Keluar",
+                            "- Stok Keluar\n\n" +
+                            "Termasuk ringkasan finansial di sheet pertama",
                     "Export Berhasil",
                     JOptionPane.INFORMATION_MESSAGE);
         }

@@ -24,7 +24,8 @@ import java.util.*;
 public class ChartFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(ChartFactory.class);
-    private static final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+    private static final NumberFormat currencyFormat = NumberFormat
+            .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
 
     /**
      * Create sales trend line chart (last 7 days)
@@ -34,8 +35,8 @@ public class ChartFactory {
             TimeSeriesCollection dataset = new TimeSeriesCollection();
             TimeSeries series = new TimeSeries("Penjualan");
 
-            // Get sales data for last 7 days
-            String sql = "SELECT DATE(tanggal) as tanggal, SUM(total_harga) as total " +
+            // Get sales data for last 7 days (using grand_total to include tax)
+            String sql = "SELECT DATE(tanggal) as tanggal, SUM(grand_total) as total " +
                     "FROM tbl_transaksi_header " +
                     "WHERE tanggal >= CURRENT_DATE - INTERVAL '7 days' " +
                     "GROUP BY DATE(tanggal) " +
@@ -72,12 +73,35 @@ public class ChartFactory {
             customizeChart(chart);
             XYPlot plot = chart.getXYPlot();
 
-            // Set line renderer
+            // Set line renderer with custom tooltips
             XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
             renderer.setSeriesPaint(0, ColorScheme.CHART_COLORS[0]);
             renderer.setSeriesStroke(0, new BasicStroke(3.0f));
             renderer.setSeriesShapesVisible(0, true);
-            renderer.setSeriesShape(0, new java.awt.geom.Ellipse2D.Double(-4, -4, 8, 8));
+            renderer.setSeriesShape(0, new java.awt.geom.Ellipse2D.Double(-5, -5, 10, 10)); // Slightly larger dots
+
+            // Custom tooltip generator for detailed information
+            renderer.setDefaultToolTipGenerator(new org.jfree.chart.labels.XYToolTipGenerator() {
+                private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy",
+                        new Locale.Builder().setLanguage("id").setRegion("ID").build());
+
+                @Override
+                public String generateToolTip(org.jfree.data.xy.XYDataset dataset, int series, int item) {
+                    Number x = dataset.getX(series, item);
+                    Number y = dataset.getY(series, item);
+
+                    if (x != null && y != null) {
+                        java.util.Date date = new java.util.Date(x.longValue());
+                        String formattedDate = dateFormat.format(date);
+                        String formattedAmount = currencyFormat.format(y.doubleValue());
+
+                        return String.format("<html><b>%s</b><br/>Penjualan: <b>%s</b></html>",
+                                formattedDate, formattedAmount);
+                    }
+                    return null;
+                }
+            });
+
             plot.setRenderer(renderer);
 
             // Customize axes
@@ -102,7 +126,7 @@ public class ChartFactory {
      */
     public static ChartPanel createCategoryDistributionChart(Connection conn) {
         try {
-            DefaultPieDataset dataset = new DefaultPieDataset();
+            DefaultPieDataset<String> dataset = new DefaultPieDataset<String>();
 
             // Get sales by category
             String sql = "SELECT k.nama_kategori, SUM(td.subtotal) as total " +
@@ -139,7 +163,8 @@ public class ChartFactory {
 
             // Customize chart appearance
             customizeChart(chart);
-            PiePlot plot = (PiePlot) chart.getPlot();
+            @SuppressWarnings("unchecked")
+            PiePlot<String> plot = (PiePlot<String>) chart.getPlot();
             plot.setBackgroundPaint(ColorScheme.CHART_BG);
             plot.setOutlineVisible(false);
             plot.setShadowPaint(null);
@@ -148,9 +173,8 @@ public class ChartFactory {
 
             // Set colors for pie sections
             int colorIndex = 0;
-            for (Object key : dataset.getKeys()) {
-                plot.setSectionPaint((Comparable) key,
-                        ColorScheme.CHART_COLORS[colorIndex % ColorScheme.CHART_COLORS.length]);
+            for (String key : dataset.getKeys()) {
+                plot.setSectionPaint(key, ColorScheme.CHART_COLORS[colorIndex % ColorScheme.CHART_COLORS.length]);
                 colorIndex++;
             }
 

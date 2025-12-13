@@ -11,7 +11,7 @@ import javax.swing.*;
  * Main Entry Point - Aplikasi Kedai Kopi
  * 
  * @author H A F I Z H
- * @version 1.0.0
+ * @version 2.0
  */
 public class Main {
 
@@ -57,7 +57,7 @@ public class Main {
      */
     private static void printApplicationBanner() {
         System.out.println("===================================================");
-        System.out.println("          KEDAI KOPI CAK BUDIBUD - v1.0.0          ");
+        System.out.println("          KEDAI KOPI CAK BUDIBUD - v2.0          ");
         System.out.println("        Sistem Kasir & Inventaris Management       ");
         System.out.println("===================================================");
         System.out.println();

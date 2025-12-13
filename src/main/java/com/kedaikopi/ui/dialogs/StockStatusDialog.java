@@ -197,7 +197,8 @@ public class StockStatusDialog extends JDialog {
                     "WHERE m.is_active = TRUE " +
                     "ORDER BY m.stok ASC, m.nama_menu";
 
-            NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+            NumberFormat currencyFormat = NumberFormat
+                    .getCurrencyInstance(new Locale.Builder().setLanguage("id").setRegion("ID").build());
 
             try (Statement stmt = conn.createStatement();
                     ResultSet rs = stmt.executeQuery(dataSql)) {

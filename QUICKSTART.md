@@ -278,7 +278,7 @@ java -Xmx512m -jar KedaiKopi.jar
 
 ## 📱 Application Info
 
-**Current Version**: 1.0.0  
+**Current Version**: 2.0  
 **Size**: ~4 MB (source code)  
 **Installed Size**: 50-100 MB (with Java runtime)  
 **Database Size**: 10-50 MB (depends on transactions)

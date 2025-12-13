@@ -389,6 +389,9 @@ public class LoginForm extends JFrame {
     private void onLoginSuccess() {
         logger.info("Login successful for user: {} ({})", authenticatedUser.getUsername(), authenticatedUser.getRole());
 
+        // Log login activity
+        com.kedaikopi.model.UserActivityLog.logLogin(authenticatedUser.getIdUser());
+
         // Show success message
         lblStatus.setText("Login berhasil!");
         lblStatus.setForeground(new Color(0, 153, 0));

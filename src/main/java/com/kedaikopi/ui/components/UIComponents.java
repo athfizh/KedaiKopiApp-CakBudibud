@@ -1,7 +1,6 @@
 package com.kedaikopi.ui.components;
 
 import com.kedaikopi.util.ColorScheme;
-import com.kedaikopi.util.IconManager;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -185,7 +184,7 @@ public class UIComponents {
      * Create a statistic card for dashboard
      */
     public static JPanel createStatCard(String title, String value, Color accentColor, Icon icon) {
-        // Reduced insets from 20 to 12 for more compact card
+        // Compact card layout
         JPanel card = new JPanel(new MigLayout("fill, insets 12", "[grow][]", "[]6[]"));
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -198,12 +197,12 @@ public class UIComponents {
 
         // Title - smaller font
         JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 10)); // Reduced from FONT_SMALL (11px)
+        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         lblTitle.setForeground(ColorScheme.TEXT_SECONDARY);
 
         // Value - smaller font
         JLabel lblValue = new JLabel(value);
-        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 22)); // Reduced from 28px
+        lblValue.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblValue.setForeground(accentColor);
 
         // Icon (if provided)

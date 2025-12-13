@@ -13,9 +13,9 @@ import java.util.List;
  */
 public class ToastNotification {
 
-    private static final int TOAST_WIDTH = 350;
+    private static final int TOAST_WIDTH = 420; // Increased from 350 for longer messages
     private static final int TOAST_HEIGHT = 80;
-    private static final int ANIMATION_DURATION = 300; // ms
+
     private static final int DISPLAY_DURATION = 3500; // ms
     private static final int MARGIN = 20;
     private static final int SPACING = 12;
@@ -128,7 +128,7 @@ public class ToastNotification {
         synchronized (activeToasts) {
             int yOffset = MARGIN;
             for (JWindow toast : activeToasts) {
-                int xPosition = window.getX() + window.getWidth() - TOAST_WIDTH - MARGIN;
+
                 int yPosition = window.getY() + yOffset;
 
                 // Smooth reposition with 60fps timing
@@ -246,7 +246,7 @@ public class ToastNotification {
         panel.setBorder(BorderFactory.createEmptyBorder(12, 18, 12, 18));
         panel.setOpaque(false);
 
-        // Icon with circular background
+        // Icon with circular background - ENSURE PERFECT CIRCLE AND CENTERING
         JPanel iconPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -254,31 +254,45 @@ public class ToastNotification {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                // Circle background
+                // Circle background - use min dimension to ensure perfect circle
+                int size = Math.min(getWidth(), getHeight()) - 6; // Increased margin from 4 to 6
+                int x = (getWidth() - size) / 2;
+                int y = (getHeight() - size) / 2;
+
                 GradientPaint circleGradient = new GradientPaint(
-                        0, 0, type.getPrimaryColor(),
-                        0, getHeight(), type.getSecondaryColor());
+                        x, y, type.getPrimaryColor(),
+                        x, y + size, type.getSecondaryColor());
                 g2.setPaint(circleGradient);
-                g2.fillOval(2, 2, getWidth() - 4, getHeight() - 4);
+                g2.fillOval(x, y, size, size); // Perfect circle
 
                 g2.dispose();
             }
         };
-        iconPanel.setPreferredSize(new Dimension(45, 45));
+        iconPanel.setPreferredSize(new Dimension(52, 52)); // Increased to 52 for better spacing
+        iconPanel.setMinimumSize(new Dimension(52, 52));
+        iconPanel.setMaximumSize(new Dimension(52, 52));
         iconPanel.setOpaque(false);
         iconPanel.setLayout(new GridBagLayout());
 
         JLabel iconLabel = new JLabel(type.getIcon());
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.BOLD, 22));
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.BOLD, 18));
         iconLabel.setForeground(Color.WHITE);
-        iconPanel.add(iconLabel);
+        iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        iconLabel.setVerticalAlignment(SwingConstants.CENTER);
+
+        // Add with GridBagConstraints for perfect centering with slight downward offset
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(4, 0, 0, 0); // Top inset 4px for perfect optical centering
+        iconPanel.add(iconLabel, gbc);
 
         panel.add(iconPanel, BorderLayout.WEST);
 
         // Message with better typography and proper width
-        JLabel messageLabel = new JLabel("<html><body style='width: 260px'>" + message + "</body></html>");
+        JLabel messageLabel = new JLabel("<html><body style='width: 310px'>" + message + "</body></html>");
         messageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         messageLabel.setForeground(new Color(45, 45, 45));
+        messageLabel.setVerticalAlignment(SwingConstants.CENTER);
         panel.add(messageLabel, BorderLayout.CENTER);
 
         // Close button
