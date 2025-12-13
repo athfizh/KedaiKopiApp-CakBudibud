@@ -307,21 +307,21 @@ flowchart TD
     RoleCheck -->|Stocker| StockerDash[Stocker Dashboard]
 
     OwnerDash --> OwnerMenu{Select Menu}
-    OwnerMenu --> Dashboard[📊 Dashboard]
-    OwnerMenu --> Kasir[💳 Kasir]
-    OwnerMenu --> Inventory[📦 Inventaris]
-    OwnerMenu --> Category[🏷️ Kategori]
-    OwnerMenu --> UserMgmt[👥 User Mgmt]
+    OwnerMenu --> Dashboard[Dashboard]
+    OwnerMenu --> Kasir[Kasir]
+    OwnerMenu --> Inventory[Inventaris]
+    OwnerMenu --> Category[Kategori]
+    OwnerMenu --> UserMgmt[User Management]
 
     KasirPanel --> KasirMenu{Select Menu}
-    KasirMenu --> KDash[📊 Dashboard Limited]
-    KasirMenu --> KPOS[💳 Kasir POS]
-    KasirMenu --> KInv[📦 Inventaris RO]
+    KasirMenu --> KDash[Dashboard Limited]
+    KasirMenu --> KPOS[Kasir POS]
+    KasirMenu --> KInv[Inventaris Read-Only]
 
     StockerDash --> StockerMenu{Select Menu}
-    StockerMenu --> SDash[📊 Dashboard Limited]
-    StockerMenu --> SInv[📦 Inventaris Full]
-    StockerMenu --> SCat[🏷️ Kategori RO]
+    StockerMenu --> SDash[Dashboard Limited]
+    StockerMenu --> SInv[Inventaris Full]
+    StockerMenu --> SCat[Kategori Read-Only]
 
     Dashboard --> Logout[Logout]
     Kasir --> Logout
@@ -352,7 +352,7 @@ graph TB
 
     subgraph Business["Business Logic Layer"]
         Models[Models: User, Menu, Transaction]
-        Controllers[Controllers & Services]
+        Controllers[Controllers and Services]
         Security[Security: BCrypt, RBAC]
         Utils[Utilities: Charts, Export, Notifications]
     end
@@ -529,9 +529,9 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    Owner[👑 Owner<br/>Full Access]
-    Kasir[💳 Kasir<br/>Transaction Focus]
-    Stocker[📦 Stocker<br/>Inventory Focus]
+    Owner[Owner - Full Access]
+    Kasir[Kasir - Transaction Focus]
+    Stocker[Stocker - Inventory Focus]
 
     Owner -->|Manages| Kasir
     Owner -->|Manages| Stocker
